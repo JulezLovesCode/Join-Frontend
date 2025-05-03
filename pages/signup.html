@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up</title>
+  <link rel="icon" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../styles/fonts.css">
+  <link rel="stylesheet" href="../styles/signup.css">
+  <script src="../scripts/getHTML.js"></script>
+</head>
+<body>
+  <div class="brandLogo">
+    <img src="../assets/images/Capa 2.png" alt="Join Logo">
+  </div>
+  <div class="registrationContainer">
+    <div class="backNavigation" id="returnButton" onclick="window.location.href='index.html';">
+      <img src="../assets/images/arrow-left-line.svg" alt="Back">
+    </div>
+    <div class="titleWithIndicator">
+      <h1>Sign Up</h1>
+      <div class="accentBar"></div>
+    </div>
+    <form id="registrationForm" class="registrationForm">
+      <div class="formFields">
+        <div class="inputWrapper">
+          <input class="formInput" type="text" placeholder="Name" id="fullName" name="name" required>
+          <img class="passwordIcon" src="../assets/images/person.png" alt="">
+        </div>
+        <div class="inputWrapper">
+          <input class="formInput" type="email" id="emailAddress" placeholder="Email" name="email" required>
+          <img class="emailIcon" src="../assets/images/mail.png" alt="">
+        </div>
+        <div class="inputWrapper">
+          <input class="formInput" onclick="initializePasswordView()" type="password" id="userPassword" placeholder="Password" name="password" required>
+          <div class="passwordIconContainer">
+            <img class="passwordIcon" onclick="togglePasswordVisibility()" id="passwordVisibilityToggle" src="../assets/images/lock.png" alt="">
+          </div>
+        </div>
+        <div class="inputWrapper" id="confirm-field-wrapper">
+          <input class="formInput" onclick="initializeConfirmPasswordView()" type="password" id="confirmUserPassword" placeholder="Confirm Password" name="confirmPassword" required>
+          <div class="passwordIconContainer">
+            <img class="passwordIcon" onclick="toggleConfirmPasswordVisibility()" id="confirmPasswordVisibilityToggle" src="../assets/images/lock.png" alt="">
+          </div>
+        </div>
+        <div class="errorMessage" id="validationMessageContainer"></div>
+      </div>
+      <div class="persistenceOption">
+        <div class="checkboxControl">
+          <img id="termsAgreement" src="../assets/images/Rectangle1.png" alt="Checkbox" style="cursor:pointer;" onclick="toggleTermsAcceptance()">
+        </div>
+        <label for="termsAgreement" class="rememberLabel">I accept the <a href="./privacy_policy_nologin.html">Privacy Policy</a></label>
+      </div>
+      <div class="centeredContent">
+        <button class="primaryButton widePadding standardHeight fixedWidth" type="submit" id="createAccountButton" disabled>Sign Up</button>
+      </div>
+    </form>
+  </div>
+  <div class="footerLinks">
+    <a href="./privacy_policy_nologin.html">Privacy Policy</a>
+    <a href="./legal_notice_nologin.html">Legal notice</a>
+  </div>
+  <div id="registrationSuccess" class="confirmationToast">You Signed Up successfully</div>
+
+  <script>
+    // Function to navigate back to the login page
+    function navigateBack() {
+      window.location.href = 'index.html';
+    }
+    
+    // Add event listener for the back button
+    if (document.getElementById('returnButton')) {
+      document.getElementById('returnButton').addEventListener('click', navigateBack);
+    }
+    
+    // Password visibility toggle functions
+    function togglePasswordVisibility() {
+      const passwordField = document.getElementById('userPassword');
+      const visibilityToggle = document.getElementById('passwordVisibilityToggle');
+      
+      if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        visibilityToggle.src = '../assets/images/visibility.png';
+      } else {
+        passwordField.type = 'password';
+        visibilityToggle.src = '../assets/images/lock.png';
+      }
+    }
+    
+    function toggleConfirmPasswordVisibility() {
+      const confirmField = document.getElementById('confirmUserPassword');
+      const visibilityToggle = document.getElementById('confirmPasswordVisibilityToggle');
+      
+      if (confirmField.type === 'password') {
+        confirmField.type = 'text';
+        visibilityToggle.src = '../assets/images/visibility.png';
+      } else {
+        confirmField.type = 'password';
+        visibilityToggle.src = '../assets/images/lock.png';
+      }
+    }
+    
+    // These functions can be used if additional initialization is needed
+    function initializePasswordView() {
+      // Placeholder for initialization
+    }
+    
+    function initializeConfirmPasswordView() {
+      // Placeholder for initialization
+    }
+    
+    // Terms acceptance toggle
+    function toggleTermsAcceptance() {
+      const checkbox = document.getElementById('termsAgreement');
+      const signupButton = document.getElementById('createAccountButton');
+      const isCurrentlyChecked = checkbox.src.includes('Rectangle2.png');
+      
+      if (isCurrentlyChecked) {
+        checkbox.src = '../assets/images/Rectangle1.png';
+        signupButton.disabled = true;
+      } else {
+        checkbox.src = '../assets/images/Rectangle2.png';
+        signupButton.disabled = false;
+      }
+    }
+    
+    /**
+     * Validates the name to ensure it contains at least a first and last name.
+     * @param {string} name - The name to validate.
+     * @returns {boolean} True if the name is valid, false otherwise.
+     */
+    function validateName(name) {
+      const nameParts = name.split(' ');
+      return nameParts.length >= 2 && nameParts[0] && nameParts[1];
+    }
+
+    /**
+     * Validates the email format.
+     * @param {string} email - The email to validate.
+     * @returns {boolean} True if the email is valid, false otherwise.
+     */
+    function validateEmail(email) {
+      const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+      return emailPattern.test(email);
+    }
+    
+    // Form submission handler
+    document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById('fullName').value.trim();
+      const email = document.getElementById('emailAddress').value.trim();
+      const password = document.getElementById('userPassword').value;
+      const confirmPassword = document.getElementById('confirmUserPassword').value;
+      
+      // Validate name (first and last name required)
+      if (!validateName(name)) {
+        document.getElementById('validationMessageContainer').textContent = 'Please enter both your first and last name.';
+        return;
+      }
+      
+      // Validate email
+      if (!validateEmail(email)) {
+        document.getElementById('validationMessageContainer').textContent = 'Please enter a valid email address.';
+        return;
+      }
+      
+      // Check if passwords match
+      if (password !== confirmPassword) {
+        document.getElementById('validationMessageContainer').textContent = "Your passwords don't match. Try again.";
+        document.getElementById('confirm-field-wrapper').classList.add('errorState');
+        return;
+      }
+      
+      try {
+        // Create a sanitized username from the name (replace spaces with underscores)
+        const sanitizedUsername = name.replace(/ /g, "_");
+        
+        // API endpoint for registration (using the correct endpoint from the original code)
+        const API_BASE_URL = 'http://127.0.0.1:8000/';
+        
+        // Send registration request to backend
+        const response = await fetch(`${API_BASE_URL}api/auth/registration/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            username: sanitizedUsername,
+            email: email, 
+            password: password,
+            repeated_password: confirmPassword
+          }),
+        });
+        
+        // Get the response text
+        const responseText = await response.text();
+        
+        // Try to parse as JSON, but handle non-JSON responses gracefully
+        let data;
+        try {
+          data = responseText ? JSON.parse(responseText) : {};
+        } catch (parseError) {
+          console.log('Response is not JSON:', responseText);
+          data = { message: responseText || 'Unknown response from server' };
+        }
+        
+        if (response.ok) {
+          // Registration successful
+          console.log('Registration successful', data);
+          
+          // Store token if returned
+          if (data.token) {
+            localStorage.setItem("token", data.token);
+            
+            if (data.user) {
+              localStorage.setItem("userProfile", JSON.stringify(data.user || {}));
+              sessionStorage.setItem("userName", data.user.username || email);
+            }
+          }
+          
+          // Store credentials for easy login
+          localStorage.setItem('userIdentifier', email);
+          localStorage.setItem('userSecret', password);
+          
+          // Clear all form fields
+          document.getElementById('fullName').value = '';
+          document.getElementById('emailAddress').value = '';
+          document.getElementById('userPassword').value = '';
+          document.getElementById('confirmUserPassword').value = '';
+          
+          // Reset checkbox
+          const checkbox = document.getElementById('termsAgreement');
+          if (checkbox) {
+            checkbox.src = '../assets/images/Rectangle1.png';
+          }
+          
+          // Disable signup button
+          document.getElementById('createAccountButton').disabled = true;
+          
+          // Show success notification
+          const successMessage = document.getElementById('registrationSuccess');
+          successMessage.classList.add('visible');
+          
+          // Redirect after success - immediately
+          window.location.href = 'index.html';
+        } else {
+          // Registration failed
+          console.error('Registration failed:', data);
+          let errorMessage = 'Registration failed. ';
+          
+          if (typeof data === 'object') {
+            // Handle API error formats
+            if (data.detail) errorMessage += data.detail;
+            else if (data.error) errorMessage += data.error;
+            else if (data.message) errorMessage += data.message;
+            else errorMessage += 'Please try again.';
+          } else {
+            errorMessage += data || 'Please try again.';
+          }
+          
+          document.getElementById('validationMessageContainer').textContent = errorMessage;
+        }
+      } catch (error) {
+        console.error('Registration error:', error);
+        document.getElementById('validationMessageContainer').textContent = 
+          'Error connecting to the server. Please try again.';
+      }
+    });
+    
+    // Enable these functions globally so they can be accessed from HTML attributes
+    window.togglePasswordVisibility = togglePasswordVisibility;
+    window.toggleConfirmPasswordVisibility = toggleConfirmPasswordVisibility;
+    window.toggleTermsAcceptance = toggleTermsAcceptance;
+    window.navigateBack = navigateBack;
+  </script>
+</body>
+</html>

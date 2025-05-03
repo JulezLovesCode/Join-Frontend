@@ -1,0 +1,135 @@
+/* Base Styling */
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: #f6f7f8;
+}
+
+/* Main Container */
+.summary-main-container {
+  display: flex;
+  margin-top: 80px;
+  margin-left: 300px;
+}
+
+/* Animation Screen */
+.animation-screen {
+  position: absolute;
+  top: 441px;
+}
+
+.greeting-user-animation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Card container styling */
+.summary-card-container {
+  display: flex;
+  flex-direction: column;
+  width: 70%;
+  margin-right: 30px;
+  margin-bottom: 100px;
+  margin-top: 32px;
+}
+
+/* Header */
+.headline-summary {
+  font-size: large;
+  padding: 8px;
+}
+
+.summary-title-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+.title-contact {
+  font-size: 61px;
+  font-weight: 700;
+}
+
+.seperator {
+  width: 0px;
+  height: 60px;
+  border: 1px solid #29abe2;
+}
+
+.mobile-seperator {
+  display: none;
+  width: 60px;
+  height: 0px;
+  border: 1px solid #29abe2;
+}
+
+/* Greeting Container */
+.greeting-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: start;
+}
+
+.greet-text {
+  font-size: 47px;
+  font-weight: 500;
+}
+
+.greet-user-name {
+  font-size: 64px;
+  color: #29abe2;
+  font-weight: 700;
+}
+
+/* Animation classes */
+.d-none {
+  display: none;
+}
+
+.hidden {
+  display: none;
+}
+
+.fadeOut {
+  animation: fadeOut 1s forwards;
+}
+
+.fadeIn {
+  animation: fadeIn 1s forwards;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.summary-main-container .summary-card-container,
+.summary-main-container .greeting-container {
+  transition: opacity 1.5s ease-in-out;
+}
+
+/* Note: Additional styles are loaded directly in HTML */

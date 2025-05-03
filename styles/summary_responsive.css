@@ -1,0 +1,311 @@
+/* Responsive Layouts */
+@media (max-width: 1250px) {
+  .summary-main-container {
+    margin-left: 260px;
+  }
+
+  .greet-user-name {
+    font-size: 50px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .summary-main-container {
+    margin-left: 230px;
+  }
+
+  .summary-card-container {
+    width: 560px;
+  }
+
+  .greet-text {
+    font-size: 28px;
+  }
+
+  .greet-user-name {
+    font-size: 44px;
+  }
+}
+
+@media (max-width: 1050px) {
+  .summary-main-container {
+    display: flex;
+    justify-content: center;
+    margin-left: 100px;
+    padding: 20px;
+  }
+
+  .sidebar {
+    display: none;
+  }
+}
+
+@media (max-width: 1000px) {
+  .title-contact {
+    font-size: 48px;
+  }
+
+  .greet-user-name {
+    font-size: 48px;
+  }
+}
+
+@media (max-width: 950px) {
+  .greet-user-name {
+    font-size: 48px;
+  }
+}
+
+@media (max-width: 900px) {
+  .summary-main-container {
+    margin-left: 0px;
+    gap: 15px;
+  }
+
+  .summary-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .summary-card-container {
+    margin-right: 0px;
+    width: 530px;
+  }
+}
+
+@media (max-width: 800px) {
+  .summary-main-container {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    margin-top: 90px;
+  }
+
+  .greeting-container {
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 80vh;
+  }
+
+  .summary-card-container {
+    display: none;
+    width: 560px;
+  }
+
+  .greet-user-name {
+    text-align: center;
+  }
+  
+  .greeting-container {
+    opacity: 1;
+    transition: opacity 1s ease-in-out;
+    display: none;
+  }
+
+  .summary-card-container {
+    display: none;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+  }
+
+  .summary-card-container.visible {
+    display: block;
+    opacity: 1;
+  }
+
+  .greeting-container.hidden {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 580px) {
+  .summary-main-container {
+    margin-left: 0px;
+  }
+
+  .title-contact {
+    font-size: 48px;
+  }
+
+  .summary-card-container {
+    width: 100%;
+  }
+
+  .summary-card-small {
+    height: 140px;
+  }
+
+  .number-container {
+    font-size: 56px;
+  }
+
+  .text-container {
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .summary-card-small-container {
+    gap: 20px;
+  }
+}
+
+@media (max-width: 520px) {
+  .summary-card {
+    width: 188px;
+    height: 125px;
+  }
+
+  .summary-card-big {
+    width: 398px;
+    height: 150px;
+    text-align: center;
+  }
+
+  .summary-card-small {
+    width: 110px;
+    height: 120px;
+  }
+
+  .title-contact {
+    font-size: 32px;
+  }
+
+  .date-text {
+    font-size: 16px;
+  }
+
+  .summary-card-small-container {
+    display: flex;
+    justify-content: center;
+  }
+
+  .summary-card-medium-container {
+    display: flex;
+    justify-content: center;
+  }
+
+  .summary-card-small-container {
+    gap: 5px;
+  }
+
+  .summary-icons-container {
+    width: 40px;
+    height: 40px;
+  }
+
+  .summary-icons {
+    height: 20px;
+    width: 20px;
+  }
+
+  .summary-icons-urgent {
+    width: 40px;
+    height: 40px;
+  }
+
+  .big-card-icons {
+    width: 40px;
+    height: 40px;
+  }
+
+  .text-container {
+    text-align: center;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 430px) {
+  .summary-card-big {
+    width: 399px;
+    height: 140px;
+  }
+
+  .summary-card-small {
+    width: 110px;
+    height: 100px;
+  }
+
+  .number-container {
+    font-size: 48px;
+  }
+
+  .summary-title-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-left: 20px;
+    gap: 15px;
+  }
+
+  .mobile-seperator {
+    display: flex;
+  }
+
+  .seperator {
+    display: none;
+  }
+
+  .summary-card-small-container {
+    gap: 5px;
+  }
+
+  .text-container {
+    text-align: center;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 370px) {
+  .number-container {
+    font-size: 48px;
+  }
+
+  .summary-card {
+    height: 120px;
+  }
+
+  .seperator-big-card {
+    margin-right: 10px;
+  }
+
+  .date-text {
+    font-size: 13px;
+  }
+
+  .deadline-text {
+    font-size: 12px;
+  }
+
+  .big-card-icons {
+    height: 40px;
+    width: 40px;
+  }
+
+  .summary-icons-container {
+    height: 40px;
+    width: 40px;
+  }
+
+  .summary-icons {
+    height: 20px;
+    width: 20px;
+  }
+
+  .text-container {
+    font-size: 12px;
+  }
+}
+
+@media (max-height: 700px) {
+  .summary-main-container {
+    margin: 0 !important;
+  }
+}
+
+@media (max-height: 700px) {
+  .animation-screen {
+    top: 300px !important;
+  }
+}

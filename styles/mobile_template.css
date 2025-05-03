@@ -1,0 +1,197 @@
+/* Responsive Contact Form Modifications */
+@media (max-width: 1120px) {
+  .createContactBtn {
+    display: none;
+  }
+
+  .modalCloseBtn img {
+    display: none;
+  }
+
+  .modalCloseBtn {
+    display: none;
+  }
+
+  .contactFormContainer {
+    border-radius: 20px;
+    flex-direction: column;
+    width: 444px;
+    height: 670px;
+    position: sticky;
+    top: 55px;
+  }
+
+  .formSidebar {
+    border-radius: 20px 20px 0 0;
+    width: 444px;
+    height: 270px;
+    display: flex;
+    padding: 66px 24px 66px 24px;
+  }
+
+  .formSidebar img {
+    display: none;
+  }
+
+  .formContent {
+    width: 444px;
+    height: 346px;
+    border-radius: 0px 0px 20px 20px;
+    padding: 66px 24px 66px 24px;
+  }
+
+  .formContent img {
+    width: 64px;
+    height: 64px;
+    position: fixed;
+    left: 263px;
+    top: 334px;
+    z-index: 3;
+  }
+
+  .avatarPlaceholder {
+    position: fixed;
+    left: 238px;
+    top: 314px;
+    width: 110px;
+    height: 110px;
+    border-radius: 70px;
+  }
+
+  .avatarPlaceholder img {
+    display: block;
+  }
+
+  .contactInputForm {
+    width: 364px;
+    height: 153px;
+    position: fixed;
+    top: 467px;
+    left: 61px;
+  }
+
+  .contactInputForm form {
+    gap: 16px;
+  }
+
+  .fieldWrapper .inputIcon {
+    left: 422px;
+  }
+
+  .contactInputForm input {
+    width: 416px;
+    height: 41px;
+  }
+
+  .actionButtons {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    left: 21px;
+  }
+
+  .submitButton {
+    padding: 18px 18px 18px 4px;
+    width: 202px;
+    height: 51px;
+    position: relative;
+    left: 28px;
+  }
+
+  .cancelButton {
+    display: none !important;
+  }
+
+  .submitButton img {
+    width: 24px;
+    height: 24px;
+    position: fixed;
+    top: 656px;
+    left: 363px;
+  }
+
+  .mobileCloseIcon {
+    display: block !important;
+    width: 64px;
+    height: 64px;
+    position: fixed;
+    left: 476px;
+    top: 70px;
+    z-index: 3;
+  }
+
+  .mobileCloseIcon:hover {
+    cursor: pointer;
+  }
+}
+
+/* Mobile Navigation Bar */
+.mobileNavigation {
+  background-color: #2a3647;
+  width: 100%;
+  height: 80px;
+  position: fixed;
+  z-index: 99;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0px -1px 16px 20px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.navigationItems {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-decoration: none;
+  color: #cdcdcd;
+  font-weight: 400;
+  font-size: 16px;
+  gap: 8px;
+  width: 90px;
+  padding: 8px;
+  border-radius: 15px;
+}
+
+.navButton:hover {
+  cursor: pointer;
+  color: #ffffff;
+  background-color: rgb(9, 25, 49);
+}
+
+.navIcon {
+  width: 32px;
+  height: 32px;
+  vertical-align: middle;
+}
+
+/* Responsive Layout Adjustments */
+@media (max-width: 1050px) {
+  .mainNavigation {
+    display: none;
+  }
+
+  .mobileNavigation {
+    display: flex;
+  }
+}
+
+@media (max-width: 470px) {
+  .navButton {
+    font-size: 12px;
+    width: 65px;
+    padding: 6px;
+  }
+}

@@ -1,0 +1,290 @@
+/* Base Typography & Layout */
+html {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #f6f7f8;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+}
+
+.typographyHeadingLarge {
+  font-size: 73px;
+}
+
+.typographyHeadingMedium {
+  font-size: 32px;
+}
+
+.typographyHeadingSmall {
+  font-size: 20px;
+}
+
+/* Document Container Styling */
+.legalDocument {
+  margin: 80px 100px 32px 300px;
+  position: sticky;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.documentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  width: 100%;
+}
+
+.optionsDropdown {
+  float: right;
+  position: relative;
+}
+
+.expandedView {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top Navigation Bar */
+.appHeader {
+  position: sticky;
+  top: 0;
+  padding: 20px 40px 20px 348px;
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  z-index: 100;
+}
+
+.headerContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+}
+
+.headerContainer img {
+  height: 40px;
+  display: none;
+}
+
+.utilityIcons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.utilityIcons img {
+  height: 32px;
+}
+
+.supportIcon:hover {
+  height: 38px;
+  cursor: pointer;
+}
+
+/* User Profile Elements */
+.userIdentifier {
+  height: 50px;
+  width: 50px;
+  border: 3px solid #2a3647;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: #29abe2;
+  background-color: rgba(12, 46, 98, 0.12);
+  display: none;
+}
+
+.userIdentifier:hover {
+  cursor: pointer;
+}
+
+.userSubmenu {
+  display: none;
+  position: absolute;
+  background-color: #2a3647;
+  min-width: 140px;
+  overflow: auto;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  border-radius: 20px 0px 20px 20px;
+  padding: 10px;
+  top: 96px;
+  right: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.userSubmenu a {
+  color: #cdcdcd;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.userSubmenu a:hover {
+  background-color: #2a3d59;
+}
+
+/* Main Navigation Panel */
+.navigationPanel {
+  background-color: #2a3647;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 232px;
+  z-index: 101;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 64px;
+  padding-bottom: 64px;
+}
+
+.appLogo {
+  width: 100.03px;
+  height: 121.97px;
+  margin-bottom: 80px;
+}
+
+.navigationPanel img {
+  width: 100px;
+}
+
+.primaryNavigation {
+  display: none;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 200px;
+}
+
+.navItemLink {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #cdcdcd;
+  gap: 5px;
+  font-size: 16px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 56px;
+  width: 176px;
+}
+
+.navItemLink:hover {
+  background-color: #2a3d59;
+}
+
+.navItemLink img {
+  width: 25px;
+  height: 25px;
+}
+
+.secondaryNavigation {
+  margin-bottom: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.secondaryNavigation a {
+  text-decoration: none;
+  color: #a8a8a8;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  width: 232px;
+}
+
+.secondaryNavigation a:hover {
+  color: #29abe2;
+  font-weight: 700;
+}
+
+.currentNavItem {
+  background-color: #091931;
+}
+
+/* Responsive Behavior - Tablets */
+@media (max-width: 1050px) {
+  .appHeader {
+    padding: 20px 40px 20px 40px;
+  }
+
+  .headerContainer img {
+    display: block;
+  }
+
+  .headerContainer p {
+    display: none;
+  }
+
+  .userIdentifier {
+    height: 40px;
+    width: 40px;
+  }
+
+  .navigationPanel {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    width: auto;
+    z-index: 101;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .appLogo {
+    display: none;
+  }
+
+  .primaryNavigation {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 0;
+    height: 80px;
+  }
+
+  .navItemLink {
+    flex-direction: column;
+    padding-left: 8px;
+    width: auto;
+    padding: 8px;
+    border-radius: 8px;
+  }
+
+  .secondaryNavigation {
+    display: none;
+  }
+}
+
+/* Responsive Behavior - Mobile */
+@media (max-width: 600px) {
+  .navItemLink {
+    font-size: 12px;
+  }
+
+  .navItemLink img {
+    width: 20px;
+    height: 20px;
+  }
+}

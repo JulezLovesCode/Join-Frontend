@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contacts</title>
+  <link rel="icon" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../styles/fonts.css">
+  <link rel="stylesheet" href="../styles/desktop_template.css">
+  <link rel="stylesheet" href="../styles/contacts.css">
+  <link rel="stylesheet" href="../styles/mobile_template.css">
+</head>
+
+<body onload="initializeContactsView(); initializeUserProfile()">
+
+  <header class="appHeader">
+    <div class="headerWrapper">
+      <img onclick="openSummaryView()" style="cursor: pointer" class="d-none" src="../assets/images/logo-dark.png" alt="">
+      <p>Kanban Project Management Tool</p>
+      <div class="utilityControls">
+        <img onclick="openHelpCenter()" class="supportButton" src="../assets/images/help.svg" alt="Help" />
+        <div id="profileAvatar" onclick="toggleMenu(); toggleUserPanel();" class="userProfile"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="profileDropdown user-content" id="profilePanel">
+    <a onclick="openLegalNotice()" href="#">Legal Notice</a>
+    <a onclick="openPrivacyPolicy()" href="#">Privacy Policy</a>
+    <a onclick="terminateUserSession(); logOut();" href="index.html">Log Out</a>
+  </div>
+  
+  <!-- Legacy dropdown menu for compatibility -->
+  <div class="user-content" id="user-content" style="display: none;">
+    <a onclick="openLegalNotice()" href="#">Legal Notice</a>
+    <a onclick="openPrivacyPolicy()" href="#">Privacy Policy</a>
+    <a onclick="terminateUserSession(); logOut();" href="index.html">Log Out</a>
+  </div>
+
+  <aside class="mainSidebar">
+    <img onclick="openSummaryView()" src="../assets/images/logo.svg" alt="" class="brandIdentity" />
+    <nav class="primaryNavigation">
+      <a href="#" class="navigationItem" onclick="openSummaryView()" id="navSummary">
+        <img src="../assets/images/sidebar_summary.svg" alt="" />Summary
+      </a>
+      <a href="#" class="navigationItem" onclick="openTaskCreation()" id="navTask">
+        <img src="../assets/images/edit_square.svg" alt="" />Add Task
+      </a>
+      <a href="#" class="navigationItem" onclick="openBoardView()" id="navBoard">
+        <img src="../assets/images/sidebar_board.svg" alt="" />Board
+      </a>
+      <a href="#" class="navigationItem activeNavItem" onclick="openContactsList()" id="navContacts">
+        <img src="../assets/images/sidebar_contacts_white.svg" alt="" />Contacts
+      </a>
+    </nav>
+    <footer class="secondaryNavigation">
+      <a id="navPrivacy" onclick="openPrivacyPolicy()" href="#">Privacy Policy</a>
+      <a id="navLegal" onclick="openLegalNotice()" href="#">Legal Notice</a>
+    </footer>
+  </aside>
+
+  <div class="contacts-library" id="contacts-panel">
+    <div class="responsive-add-contact" onclick="openContactForm()">
+      <img src="../assets/images/person_add.svg" alt="">
+    </div>
+    <div class="button-add-contact" onclick="openContactForm()">
+      Add new contact
+      <img src="../assets/images/person_add.svg" alt="">
+    </div>
+    <div id="contacts-list" class="contacts-list">
+      <!-- Contact list will be populated by JavaScript -->
+    </div>
+  </div>
+
+  <div class="contact-details-container">
+    <a class="back" onclick="mobileBackToContactsList()">
+      <img class="arrow" src="../assets/images/arrow-left-line.svg" />
+    </a>
+    <div class="contact-headline">
+      <h1>Contacts</h1>
+      <div class="blue-vertical-line"></div>
+      <h2 class="subheadline">Better with a team</h2>
+    </div>
+
+    <div id="contact-details" class="contact-profile">
+      <!-- Contact details will be populated by JavaScript -->
+    </div>
+  </div>
+
+  <!-- ADD CONTACT LAYER -->
+  <div class="add-contact-layer d-none" id="contact-form-overlay">
+    <div class="add-contact-inner-layer" id="contact-form-panel">
+      <div class="add-contact-left" onclick="closeContactForm()">
+        <img class="close-symbol" src="../assets/images/close-white.svg" alt="add-contact-layer-close">
+        <img src="../assets/images/logo.svg" alt="join-logo">
+        <h1>Add Contact</h1>
+        <h2>Tasks are better with a team</h2>
+        <div class="add-layer-line"></div>
+      </div>
+      <div class="add-contact-right">
+        <div class="add-contact-layer-close" onclick="closeContactForm()">
+          <img src="../assets/images/add-contact-close.svg" alt="add-contact-layer-close">
+        </div>
+        <div class="add-contact-data">
+          <div class="default-contact">
+            <img src="../assets/images/add-contact-person.svg" alt="">
+          </div>
+          <div class="add-contact-form">
+            <form onsubmit="createContact(); return false">
+              <div class="input-container">
+                <input placeholder="Name" id="contact-name-input" required type="text" pattern="^[A-Za-z]+ [A-Za-z]+.*$"
+                  title="Please enter at least a first name and a last name">
+                <img class="icon" src="../assets/images/add-contact-form-person.svg" alt="user icon">
+              </div>
+              <div class="input-container">
+                <input placeholder="Email" id="contact-email-input" required type="email">
+                <img class="icon" src="../assets/images/add-contact-form-mail.svg" alt="email icon">
+              </div>
+              <div class="input-container">
+                <input placeholder="Phone" id="contact-phone-input" required type="tel"
+                  pattern="^(\+49\s?\(?0?\)?\s?\d{3}\s?\d{1,}|^\d{4}\s?\d{1,})$"
+                  title="Please enter a valid phone number in one of the following formats: 01626963474, 0162 6963474, +49 162 6963474, +49 (0)162 6963474">
+                <img class="icon" src="../assets/images/add-contact-form-phone.svg" alt="phone icon">
+              </div>
+              <div class="button-group">
+                <button class="button-bright" type="button" onclick="closeContactForm()">
+                  Cancel <img class="contact-icon" src="../assets/images/add-contact-close.svg" alt="">
+                </button>
+                <button class="button-dark button-dark-contact" type="submit">
+                  Create contact <img src="../assets/images/add-contact-check.svg" alt="">
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT CONTACT LAYER -->
+  <div class="add-contact-layer d-none" id="edit-contact-overlay">
+    <div class="add-contact-inner-layer" id="edit-contact-panel">
+      <div class="add-contact-left" onclick="closeEditContactForm()">
+        <img class="close-symbol" src="../assets/images/close-white.svg" alt="add-contact-layer-close">
+        <img src="../assets/images/logo.svg" alt="join-logo">
+        <h1>Edit Contact</h1>
+        <div class="add-layer-line"></div>
+      </div>
+      <div class="add-contact-right">
+        <div class="add-contact-layer-close" onclick="closeEditContactForm()">
+          <img src="../assets/images/add-contact-close.svg" alt="add-contact-layer-close">
+        </div>
+        <div class="add-contact-data">
+          <div class="default-contact">
+            <img src="../assets/images/add-contact-person.svg" alt="">
+          </div>
+          <div class="add-contact-form">
+            <form onsubmit="updateContact(); return false">
+              <input type="hidden" id="edit-contact-id">
+              <div class="input-container">
+                <input placeholder="Name" id="edit-contact-name" required type="text" pattern="^[A-Za-z]+ [A-Za-z]+.*$"
+                  title="Please enter at least a first name and a last name">
+                <img class="icon" src="../assets/images/add-contact-form-person.svg" alt="user icon">
+              </div>
+              <div class="input-container">
+                <input placeholder="Email" id="edit-contact-email" required type="email">
+                <img class="icon" src="../assets/images/add-contact-form-mail.svg" alt="email icon">
+              </div>
+              <div class="input-container">
+                <input placeholder="Phone" id="edit-contact-phone" required type="tel"
+                  pattern="^(\+49\s?\(?0?\)?\s?\d{3}\s?\d{1,}|^\d{4}\s?\d{1,})$"
+                  title="Please enter a valid phone number in one of the following formats: 01626963474, 0162 6963474, +49 162 6963474, +49 (0)162 6963474">
+                <img class="icon" src="../assets/images/add-contact-form-phone.svg" alt="phone icon">
+              </div>
+              <div class="button-group">
+                <button class="button-bright" type="button" onclick="closeEditContactForm()">
+                  Cancel <img class="contact-icon" src="../assets/images/add-contact-close.svg" alt="">
+                </button>
+                <button class="button-dark button-dark-contact" type="submit">
+                  Save<img src="../assets/images/add-contact-check.svg" alt="">
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../scripts/api.js"></script>
+  <script src="../scripts/getHTML.js"></script>
+  <script src="../scripts/contacts.js"></script>
+  <script src="../script.js"></script>
+</body>
+
+</html>

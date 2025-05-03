@@ -1,0 +1,230 @@
+.slide-in-right {
+    animation: slide-in-right 0.5s forwards;
+}
+
+@keyframes slide-in-right {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.slide-out-right {
+    animation: slide-out-right 0.5s forwards;
+}
+
+@keyframes slide-out-right {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* ADD CONTACT LAYER */
+
+.add-contact-layer {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    z-index: 1000002;
+    background-color: rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.d-none {
+    display: none;
+}
+
+.add-contact-inner-layer {
+    height: 594px;
+    border-radius: 20px;
+    padding: 66px 46px 66px 46px;
+    display: flex;
+}
+
+.add-contact-left {
+    background-color: #2a3647;
+    border-radius: 20px 0px 0px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+    padding: 0px 48px 66px 48px;
+}
+
+.add-contact-left img {
+    width: 55px;
+}
+
+.add-contact-left h1,
+.add-contact-left h2 {
+    color: white;
+}
+
+.add-layer-line {
+    background-color: #29abe2;
+    height: 3px;
+    width: 90px;
+}
+
+.add-contact-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    border-radius: 0px 20px 20px 0px;
+    background-color: white;
+    padding: 40px 40px 66px 66px;
+    gap: 80px;
+}
+
+.add-contact-right img {
+    width: 32px;
+    height: 32px;
+}
+
+.add-contact-layer-close {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.add-contact-layer-close:hover {
+    background-color: #ebebeb;
+    cursor: pointer;
+}
+
+.add-contact-data {
+    display: flex;
+    gap: 80px;
+    align-items: center;
+}
+
+.default-contact {
+    width: 120px;
+    height: 120px;
+    border: 3px solid white;
+    border-radius: 50%;
+    background-color: #d1d1d1;
+    box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 50px;
+}
+
+.default-contact img {
+    width: 64px;
+    height: 64px;
+}
+
+.add-contact-form form {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.input-container {
+    position: relative;
+}
+
+.input-container .icon {
+    position: absolute;
+    left: 425px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+}
+
+.add-contact-form input {
+    border: 1px solid #d1d1d1;
+    border-radius: 10px;
+    width: 422px;
+    height: 50px;
+    padding: 0px 21px 0px 21px;
+    font-size: 20px;
+}
+
+.add-contact-form input:focus {
+    outline: none;
+}
+
+.add-contact-form input::placeholder {
+    color: #d1d1d1;
+    font-size: 20px;
+}
+
+.button-group {
+    display: flex;
+    gap: 24px;
+}
+
+.button-dark {
+    background-color: #2a3647;
+    border-radius: 10px;
+    border: none;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    align-items: center;
+    font-weight: 700;
+    font-size: 21px;
+    color: white;
+}
+
+.button-dark p {
+    font-size: 21px;
+}
+
+.button-bright {
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    align-items: center;
+    font-weight: 400;
+    font-size: 20px;
+    color: #2a3647;
+    border: 1px solid #2a3647;
+    background-color: white;
+}
+
+.button-bright:hover {
+    cursor: pointer;
+    border: 1px solid #29abe2;
+    color: #29abe2;
+    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+}
+
+.button-bright:hover .contact-icon {
+    filter: brightness(0) saturate(100%) invert(62%) sepia(41%) saturate(2398%) hue-rotate(165deg) brightness(93%) contrast(90%);
+}
+
+.button-dark img,
+.button-bright img {
+    width: 24px;
+    height: 24px;
+}
+
+/* Import responsive contact styles */
+@import url("contacts_responsive.css");

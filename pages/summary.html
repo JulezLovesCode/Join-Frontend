@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Summary</title>
+  <link rel="icon" href="../assets/images/logo.svg">
+  <link rel="stylesheet" href="../styles/fonts.css">
+  <link rel="stylesheet" href="../styles/summary.css">
+  <link rel="stylesheet" href="../styles/summary_cards.css">
+  <link rel="stylesheet" href="../styles/summary_responsive.css">
+  <link rel="stylesheet" href="../styles/desktop_template.css">
+  <link rel="stylesheet" href="../styles/mobile_template.css">
+  <script src="../script.js"></script>
+</head>
+
+<body onload="summaryInit()" onresize="checkResponsiveLayout()">
+  <header class="appHeader">
+    <div class="headerWrapper">
+      <img onclick="openSummaryView()" style="cursor: pointer" class="d-none" src="../assets/images/logo-dark.png" alt="">
+      <p>Kanban Project Management Tool</p>
+      <div class="utilityControls">
+        <img onclick="openHelpCenter()" class="supportButton" src="../assets/images/help.svg" alt="questionmark" />
+        <div id="profileAvatar" class="userProfile"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="profileDropdown user-content" id="profilePanel">
+    <a onclick="openLegalNotice()" href="#">Legal Notice</a>
+    <a onclick="openPrivacyPolicy()" href="#">Privacy Policy</a>
+    <a onclick="terminateUserSession(); logOut();" href="index.html">Log Out</a>
+  </div>
+  
+  <!-- Legacy dropdown menu for compatibility -->
+  <div class="user-content" id="user-content" style="display: none;">
+    <a onclick="openLegalNotice()" href="#">Legal Notice</a>
+    <a onclick="openPrivacyPolicy()" href="#">Privacy Policy</a>
+    <a onclick="terminateUserSession(); logOut();" href="index.html">Log Out</a>
+  </div>
+
+  <aside class="mainSidebar">
+    <img onclick="openSummaryView()" src="../assets/images/logo.svg" alt="" class="brandIdentity" />
+    <nav class="primaryNavigation">
+      <a href="#" class="navigationItem activeNavItem" onclick="openSummaryView()" id="navSummary">
+        <img src="../assets/images/sidebar_summary_white.svg" alt="" />Summary
+      </a>
+      <a href="#" class="navigationItem" onclick="openTaskCreation()" id="navTask">
+        <img src="../assets/images/edit_square.svg" alt="" />Add Task
+      </a>
+      <a href="#" class="navigationItem" onclick="openBoardView()" id="navBoard">
+        <img src="../assets/images/sidebar_board.svg" alt="" />Board
+      </a>
+      <a href="#" class="navigationItem" onclick="openContactsList()" id="navContacts">
+        <img src="../assets/images/sidebar_contacts.svg" alt="" />Contacts
+      </a>
+    </nav>
+    <footer class="secondaryNavigation">
+      <a id="navPrivacy" onclick="openPrivacyPolicy()" href="#">Privacy Policy</a>
+      <a id="navLegal" onclick="openLegalNotice()" href="#">Legal Notice</a>
+    </footer>
+  </aside>
+
+  <div class="summary-main-container">
+    <div id="animationScreen" class="animation-screen"></div>
+    <div class="summary-card-container">
+      <div class="headline-summary">
+        <div class="summary-title-container">
+          <h1 class="title-contact">Join</h1>
+          <div class="seperator"></div>
+          <p>Key Metrics at a Glance</p>
+          <div class="mobile-seperator"></div>
+        </div>
+      </div>
+      <div class="summary-card-medium-container">
+        <a onclick="openBoardView()" href="#" class="summary-card">
+          <div class="icon-container">
+            <div class="summary-icons-container">
+              <img class="summary-icons" src="../assets/images/edit-summary.svg" />
+            </div>
+            <div class="text-container">
+              <span class="number-container" id="toDoCount">0</span>
+              <span>To-do</span>
+            </div>
+          </div>
+        </a>
+        <a onclick="openBoardView()" href="#" class="summary-card">
+          <div class="icon-container">
+            <div class="summary-icons-container">
+              <img class="summary-icons" src="../assets/images/click.svg" />
+            </div>
+            <div class="text-container">
+              <span class="number-container" id="doneCount">0</span>
+              <span>Done</span>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="summary-card-big-container">
+        <a onclick="openBoardView()" href="#" class="summary-card-big">
+          <div class="icon-container">
+            <div class="big-card-icons">
+              <img class="summary-icons-urgent" src="../assets/images/urgent.svg" />
+            </div>
+            <div class="text-container">
+              <span class="number-container" id="urgentCount">0</span>
+              <span>Urgent</span>
+            </div>
+          </div>
+          <div class="seperator-big-card"></div>
+          <div class="text-container-big-card">
+            <span class="date-text" id="upcomingDate"></span>
+            <span class="deadline-text">Upcoming Deadline</span>
+          </div>
+        </a>
+      </div>
+      <div class="summary-card-small-container">
+        <a onclick="openBoardView()" href="#" class="summary-card-small">
+          <div>
+            <div class="text-container">
+              <span class="number-container" id="allTasks">0</span>
+              <span class="text">Tasks in Board</span>
+            </div>
+          </div>
+        </a>
+        <a onclick="openBoardView()" href="#" class="summary-card-small">
+          <div>
+            <div class="text-container">
+              <span class="number-container" id="inProgressCount">0</span>
+              <span class="text">Tasks in Progress</span>
+            </div>
+          </div>
+        </a>
+        <a onclick="openBoardView()" href="#" class="summary-card-small">
+          <div>
+            <div class="text-container">
+              <span class="number-container" id="awaitFeedbackCount">0</span>
+              <span class="text">Awaiting Feedback</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+    <div class="greeting-container" id="greeting-container">
+      <span class="greet-text">Good afternoon,</span>
+      <span class="greet-user-name" id="userGreeting">Guest</span>
+    </div>
+  </div>
+
+  <script src="../scripts/api_config.js"></script>
+  <script src="../scripts/api.js"></script>
+  <script src="../scripts/getHTML.js"></script>
+  <script src="../scripts/error_handling.js"></script>
+  <script>
+    /**
+     * Initializes the summary page
+     */
+    function summaryInit() {
+      console.log('Initializing summary page...');
+      initializeUserProfile();
+      greetUser();
+      initializeDashboard();
+    }
+
+    /**
+     * Primary initialization of dashboard elements
+     */
+    async function initializeDashboard() {
+      console.log('Initializing dashboard...');
+      configureInitialState();
+      loadSummaryData();
+    }
+
+    /**
+     * Configures initial page state based on screen size and previous usage
+     */
+    function configureInitialState() {
+      console.log('Configuring initial state...');
+      const animationPanel = document.getElementById('animationScreen');
+      const dashboardContainer = document.querySelector('.summary-card-container');
+      
+      if (window.innerWidth >= 800) {
+        console.log('Large screen detected, skipping animation');
+        localStorage.setItem('greetingShown', 'true');
+        dashboardContainer.classList.add('visible');
+      } else {
+        console.log('Small screen detected, preparing animation');
+        if (!localStorage.getItem('greetingShown')) {
+          localStorage.setItem('greetingShown', 'true');
+          displayWelcomeAnimation();
+        } else {
+          dashboardContainer.classList.add('visible');
+        }
+      }
+    }
+
+    /**
+     * Creates and displays welcome animation
+     */
+    function displayWelcomeAnimation() {
+      console.log('Displaying welcome animation...');
+      const animationPanel = document.getElementById('animationScreen');
+      let timeOfDay = determineDaytimePeriod();
+      let userIdentifier = sessionStorage.getItem('userName') || localStorage.getItem('userName') || 'Guest';
+      
+      animationPanel.innerHTML = `<div class="greeting-user-animation">
+                  <span class="greet-text">Good ${timeOfDay},</span>
+                  <span class="greet-user-name">${userIdentifier}</span>
+               </div>`;
+      
+      animationPanel.classList.remove('d-none');
+      animationPanel.classList.add('fadeIn');
+      
+      setTimeout(dismissWelcomeAnimation, 2000);
+    }
+
+    /**
+     * Hides welcome animation with fadeout effect
+     */
+    function dismissWelcomeAnimation() {
+      console.log('Dismissing welcome animation...');
+      const animationPanel = document.getElementById('animationScreen');
+      const dashboardContainer = document.querySelector('.summary-card-container');
+      
+      animationPanel.classList.remove('fadeIn');
+      animationPanel.classList.add('fadeOut');
+      
+      setTimeout(() => {
+        animationPanel.classList.add('hidden');
+        if (dashboardContainer) dashboardContainer.classList.add('visible');
+      }, 1000);
+    }
+
+    /**
+     * Loads summary data from the backend API
+     */
+    async function loadSummaryData() {
+      console.log('Loading summary data...');
+      
+      // Check if user is authenticated
+      const authToken = localStorage.getItem('token');
+      
+      if (!authToken) {
+        console.log('No authentication token found, skipping summary endpoint');
+        await loadTaskData();
+        return;
+      }
+      
+      try {
+        // First try the summary endpoint
+        const summaryResponse = await makeApiRequest('api/summary/', 'GET');
+        console.log('Summary API response:', summaryResponse);
+        
+        if (summaryResponse && !summaryResponse.error && !summaryResponse.detail) {
+          console.log('Using summary endpoint data');
+          updateSummaryFromEndpoint(summaryResponse);
+        } else {
+          console.warn('Summary endpoint failed, trying tasks endpoint');
+          await loadTaskData();
+        }
+      } catch (error) {
+        console.error('Error loading summary data:', error);
+        await loadTaskData();
+      }
+    }
+    
+    /**
+     * Updates summary with data from the summary endpoint
+     */
+    function updateSummaryFromEndpoint(summaryData) {
+      try {
+        console.log('Updating from summary endpoint:', summaryData);
+        
+        // Check if we got an error response instead of data
+        if (summaryData.detail) {
+          console.warn('Authentication error from summary endpoint:', summaryData.detail);
+          // Fall back to loading tasks
+          loadTaskData();
+          return;
+        }
+        
+        // Update card counts
+        document.getElementById('toDoCount').textContent = summaryData['to-do'] || 0;
+        document.getElementById('inProgressCount').textContent = summaryData['in-progress'] || 0;
+        document.getElementById('awaitFeedbackCount').textContent = summaryData['await-feedback'] || 0;
+        document.getElementById('doneCount').textContent = summaryData['done'] || 0;
+        document.getElementById('allTasks').textContent = summaryData['total-tasks'] || 0;
+        document.getElementById('urgentCount').textContent = summaryData['urgent'] || 0;
+        
+        // No upcoming deadline info in summary endpoint
+        document.getElementById('upcomingDate').textContent = 'No upcoming deadline';
+        
+        console.log('Summary data updated successfully');
+      } catch (error) {
+        console.error('Error updating from summary endpoint:', error);
+        // Fall back to loading tasks
+        loadTaskData();
+      }
+    }
+
+    /**
+     * Loads task data from the API
+     */
+    async function loadTaskData() {
+      try {
+        console.log('Attempting to load tasks from API...');
+        const response = await makeApiRequest('api/tasks/', 'GET');
+        console.log('Tasks API response:', response);
+        
+        if (response && !response.error) {
+          console.log('Task data received successfully:', response);
+          updateTaskCount(response);
+        } else {
+          console.warn('API returned error or empty response:', response);
+          // Use empty data if API fails
+          updateTaskCount([]);
+        }
+      } catch (error) {
+        console.error('Error loading tasks:', error);
+        // Use empty data if API fails
+        updateTaskCount([]);
+      }
+    }
+
+    /**
+     * Updates the task counters on the page
+     */
+    function updateTaskCount(tasks) {
+      console.log('Updating task counts with data:', tasks);
+      
+      if (!Array.isArray(tasks)) {
+        console.error('Tasks data is not an array:', tasks);
+        tasks = [];
+      }
+      
+      try {
+        const todoTasks = tasks.filter(task => task.board_category === 'to-do').length;
+        const inProgressTasks = tasks.filter(task => task.board_category === 'in-progress').length;
+        const awaitFeedbackTasks = tasks.filter(task => task.board_category === 'await-feedback').length;
+        const doneTasks = tasks.filter(task => task.board_category === 'done').length;
+        const urgentTasks = tasks.filter(task => task.priority === 'urgent');
+        
+        console.log('Calculated counts:', {
+          todo: todoTasks,
+          inProgress: inProgressTasks,
+          awaitFeedback: awaitFeedbackTasks,
+          done: doneTasks,
+          urgent: urgentTasks.length,
+          total: tasks.length
+        });
+        
+        // Update DOM elements
+        document.getElementById('toDoCount').textContent = todoTasks;
+        document.getElementById('doneCount').textContent = doneTasks;
+        document.getElementById('inProgressCount').textContent = inProgressTasks;
+        document.getElementById('awaitFeedbackCount').textContent = awaitFeedbackTasks;
+        document.getElementById('allTasks').textContent = tasks.length;
+        document.getElementById('urgentCount').textContent = urgentTasks.length;
+        
+        // Set upcoming deadline
+        if (urgentTasks.length > 0) {
+          const sortedUrgent = [...urgentTasks].sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+          const nearestDeadline = new Date(sortedUrgent[0].due_date);
+          const formattedDate = nearestDeadline.toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+          });
+          document.getElementById('upcomingDate').textContent = formattedDate;
+        } else {
+          document.getElementById('upcomingDate').textContent = 'No upcoming deadline';
+        }
+        
+        console.log('Task counts updated successfully');
+        
+      } catch (error) {
+        console.error('Error updating task counts:', error);
+      }
+    }
+
+    /**
+     * Shows greeting message based on time of day
+     */
+    function greetUser() {
+      console.log('Setting up greeting message...');
+      const hour = new Date().getHours();
+      let greeting = 'Good ';
+      
+      if (hour >= 5 && hour < 12) {
+        greeting += 'morning';
+      } else if (hour >= 12 && hour < 18) {
+        greeting += 'afternoon';
+      } else if (hour >= 18 && hour < 22) {
+        greeting += 'evening';
+      } else {
+        greeting += 'night';
+      }
+      
+      // Get username from multiple possible storage locations
+      let userName = 'Guest';
+      const authToken = localStorage.getItem('token');
+      const email = localStorage.getItem('userEmail');
+      
+      // Try different storage locations for username
+      const storedUserName = localStorage.getItem('userName');
+      if (storedUserName && storedUserName !== 'undefined' && storedUserName !== 'null') {
+        userName = storedUserName;
+      } else {
+        const sessionUserName = sessionStorage.getItem('userName');
+        if (sessionUserName && sessionUserName !== 'undefined' && sessionUserName !== 'null') {
+          userName = sessionUserName;
+        } else if (email) {
+          userName = email.split('@')[0];
+        }
+      }
+      
+      console.log('Using user name:', userName);
+      
+      // Update the greeting text
+      document.querySelector('.greet-text').textContent = `${greeting},`;
+      document.querySelector('.greet-user-name').textContent = userName;
+      
+      // Also update any greeting element with ID
+      const userGreeting = document.getElementById('userGreeting');
+      if (userGreeting) userGreeting.textContent = userName;
+      
+      // Make sure the greeting container is visible
+      const greetingContainer = document.getElementById('greeting-container');
+      if (greetingContainer) greetingContainer.style.display = 'flex';
+      
+      // Show the card container (70% width styling is already applied in CSS)
+      const cardContainer = document.querySelector('.summary-card-container');
+      if (cardContainer) cardContainer.classList.add('visible');
+      
+      // Animation for mobile
+      if (window.innerWidth <= 800) {
+        setTimeout(() => {
+          if (greetingContainer) greetingContainer.classList.add('fadeOut');
+          
+          setTimeout(() => {
+            if (greetingContainer) greetingContainer.style.display = 'none';
+          }, 1000);
+        }, 2000);
+      }
+    }
+    
+    /**
+     * Determines appropriate greeting based on time of day
+     * @returns Time period string (morning, afternoon, evening, night)
+     */
+    function determineDaytimePeriod() {
+      let currentHour = new Date().getHours();
+
+      if (currentHour >= 5 && currentHour < 12) return 'morning';
+      if (currentHour >= 12 && currentHour < 18) return 'afternoon';
+      if (currentHour >= 18 && currentHour < 22) return 'evening';
+      return 'night';
+    }
+    
+    /**
+     * Checks and adjusts layout based on screen size
+     */
+    function checkResponsiveLayout() {
+      const greetingContainer = document.getElementById('greeting-container');
+      const cardContainer = document.querySelector('.summary-card-container');
+      
+      if (window.innerWidth <= 800) {
+        // Mobile view - center greeting
+        if (greetingContainer) {
+          greetingContainer.style.position = 'fixed';
+          greetingContainer.style.top = '50%';
+          greetingContainer.style.left = '50%';
+          greetingContainer.style.transform = 'translate(-50%, -50%)';
+          greetingContainer.style.right = 'auto';
+          greetingContainer.style.bottom = 'auto';
+          greetingContainer.style.textAlign = 'center';
+        }
+      } else {
+        // Desktop view - position at bottom right
+        if (greetingContainer) {
+          greetingContainer.style.position = 'fixed';
+          greetingContainer.style.right = '40px';
+          greetingContainer.style.bottom = '40px';
+          greetingContainer.style.top = 'auto';
+          greetingContainer.style.left = 'auto';
+          greetingContainer.style.transform = 'none';
+          greetingContainer.style.textAlign = 'right';
+        }
+      }
+      
+      // Always ensure the card container is visible for desktop
+      if (window.innerWidth > 800 && cardContainer) {
+        cardContainer.classList.add('visible');
+      }
+    }
+  </script>
+</body>
+
+</html>

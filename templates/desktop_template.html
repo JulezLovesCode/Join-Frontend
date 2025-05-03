@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Desktop Template</title>
+    <link rel="icon" href="../img/logo.svg" />
+    <link rel="stylesheet" href="../css/desktop_template.css" />
+    <link rel="stylesheet" href="../css/fonts.css" />
+    <link rel="stylesheet" href="../privacy_policy.css" />
+    <link rel="stylesheet" href="../css/mobile_template.css" />
+    <script src="../script.js"></script>
+  </head>
+  <body>
+    <script src="../privacy_policy.js"></script>
+
+    <nav class="appHeader">
+      <div class="headerContainer">
+        <p>Kanban Project Management Tool</p>
+        <div class="utilityControls">
+          <img
+            onclick="openHelpCenter()"
+            class="supportButton"
+            src="../img/help.svg"
+            alt="Help Icon"
+          />
+          <div
+            id="profileAvatar"
+            onclick="switchProfilePanelState()"
+            class="userAvatar"
+          >
+            SM
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="profileMenu" id="profilePanel">
+      <a href="./legal_notice.html">Legal Notice</a>
+      <a href="./privacy_policy.html">Privacy Policy</a>
+      <a onclick="terminateSession()" href="index.html">Log Out</a>
+    </div>
+
+    <aside class="navigationSidebar">
+      <img
+        onclick="openSummaryView()"
+        src="../img/logo.svg"
+        alt="Company Logo"
+        class="brandLogo"
+      />
+
+      <nav class="mainNavigation">
+        <a href="#" class="navItem" onclick="openSummaryView()" id="navSummary">
+          <img src="../img/sidebar_summary.svg" alt="Summary Icon" />Summary
+        </a>
+        <a href="#" class="navItem" onclick="openTaskCreation()" id="navTask">
+          <img src="../img/edit_square.svg" alt="Task Icon" />Add Task
+        </a>
+        <a href="#" class="navItem" onclick="openBoardView()" id="navBoard">
+          <img src="../img/sidebar_board.svg" alt="Board Icon" />Board
+        </a>
+        <a
+          href="#"
+          class="navItem"
+          onclick="openContactsList()"
+          id="navContacts"
+        >
+          <img src="../img/sidebar_contacts.svg" alt="Contacts Icon" />Contacts
+        </a>
+      </nav>
+
+      <footer class="secondaryLinks">
+        <a id="navPrivacy" onclick="openPrivacyPolicy()" href="#"
+          >Privacy Policy</a
+        >
+        <a id="navLegal" onclick="openLegalNotice()" href="#">Legal Notice</a>
+      </footer>
+    </aside>
+  </body>
+</html>

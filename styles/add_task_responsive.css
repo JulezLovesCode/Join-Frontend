@@ -1,0 +1,144 @@
+/* Media Queries */
+@media (max-width: 1300px) {
+  .taskFormFooter {
+    width: 90%;
+  }
+  
+  .primaryColumn,
+  .secondaryColumn {
+    max-width: 350px;
+  }
+  
+  .dropdownMenu,
+  .contactsList {
+    max-width: 350px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .taskCreationContainer {
+    margin-left: 250px;
+  }
+  
+  .pageTitle {
+    font-size: 50px;
+  }
+  
+  .primaryColumn,
+  .secondaryColumn {
+    max-width: 300px;
+  }
+  
+  .dropdownMenu,
+  .contactsList {
+    max-width: 300px;
+  }
+  
+  .priorityButton {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 950px) {
+  .taskCreationContainer {
+    margin-left: 100px;
+  }
+}
+
+@media (max-width: 800px) {
+  .taskCreationContainer {
+    margin-left: 40px;
+  }
+  
+  .columnDivider {
+    height: 350px;
+  }
+  
+  .primaryColumn,
+  .secondaryColumn {
+    max-width: 250px;
+  }
+  
+  .dropdownMenu,
+  .contactsList {
+    max-width: 250px;
+  }
+  
+  .priorityButton {
+    font-size: 14px;
+    padding: 10px 5px;
+  }
+  
+  .buttonContainer {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 650px) {
+  .pageTitle {
+    font-size: 40px;
+  }
+  
+  .taskFormLayout {
+    flex-direction: column;
+  }
+  
+  .primaryColumn,
+  .secondaryColumn {
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  .secondaryColumn {
+    margin-left: 0;
+    margin-top: 24px;
+  }
+  
+  .columnDivider {
+    display: none;
+  }
+  
+  .dropdownMenu,
+  .contactsList {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 581px) {
+  .taskCreationContainer {
+    margin-left: 0;
+    padding: 20px;
+    margin-bottom: 80px;
+  }
+  
+  .taskFormFooter {
+    margin-bottom: 80px;
+  }
+  
+  .requiredNotice {
+    display: none;
+  }
+  
+  .actionsContainer {
+    display: none;
+  }
+  
+  .mobileActionBar {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+  }
+  
+  .requiredNoticeMobile {
+    display: flex;
+  }
+  
+  .pageTitle {
+    font-size: 36px;
+    line-height: 44px;
+    margin-bottom: 24px;
+  }
+}

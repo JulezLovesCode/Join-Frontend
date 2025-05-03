@@ -1,0 +1,129 @@
+/* Foundation Styles */
+body {
+  background-color: #f6f7f8;
+  overflow-x: hidden;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Typography */
+.pageTitle {
+  font-size: 61px;
+  font-weight: 700;
+  line-height: 73.2px;
+  margin-bottom: 40px;
+}
+
+.span-red {
+  color: #ff3d00;
+  margin-left: 4px;
+}
+
+/* Core Layout Components */
+.taskCreationContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-left: 324px;
+  padding: 40px;
+  margin-bottom: 100px;
+  transition: all 0.3s ease;
+}
+
+.taskFormLayout {
+  display: flex;
+  max-width: 1500px;
+}
+
+.taskFormFooter {
+  display: flex;
+  width: 100%;
+  max-width: 1000px;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 40px;
+}
+
+/* Form Field Containers */
+.primaryColumn {
+  margin-right: 40px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.secondaryColumn {
+  margin-left: 40px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.columnDivider {
+  margin-left: 40px;
+  border: 1px solid #d1d1d1;
+  height: 424px;
+}
+
+.formFieldGroup {
+  margin-bottom: 24px;
+}
+
+.formLabel {
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+/* Form Controls */
+.textEntryField {
+  outline: none;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #d1d1d1;
+  padding: 12px 21px;
+  font-size: 20px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.textEntryField:focus {
+  border-color: #29abe2;
+}
+
+.textareaField {
+  font-size: 20px;
+  line-height: 24px;
+  outline: none;
+  height: 120px;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #d1d1d1;
+  padding: 18px 16px;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  resize: none;
+  transition: border-color 0.2s ease;
+}
+
+.textareaField:focus {
+  border-color: #29abe2;
+}
+
+.dropdownSelector {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  border-radius: 10px;
+  border: 1px solid #d1d1d1;
+  cursor: pointer;
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 20px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.dropdownSelector:hover {
+  border-color: #ababab;
+}
+
+/* Note: Additional styles are loaded directly in HTML */

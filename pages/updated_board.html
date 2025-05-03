@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Join - Board</title>
+    <link rel="icon" href="../assets/images/logo.svg" />
+    <link rel="stylesheet" href="../styles/fonts.css" />
+    <link rel="stylesheet" href="../styles/desktop_template.css" />
+    <link rel="stylesheet" href="../styles/board.css" />
+    
+    <!-- Add our new API configuration and error handling scripts -->
+    <script src="../scripts/api_config.js"></script>
+    <script src="../scripts/error_handling.js"></script>
+  </head>
+
+  <body onload="boardInit()">
+    <header class="appHeader">
+      <div class="headerWrapper">
+        <img class="logo-header" src="../assets/images/logo-dark.png" alt="Logo" />
+        <p>Kanban Project Management Tool</p>
+        <div class="utilityControls">
+          <img src="../assets/images/help.svg" alt="Help" class="supportButton" />
+          <div class="userProfile" id="user-profile" onclick="toggleUserPanel()"></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="profileDropdown" id="user-panel">
+      <a href="legal_notice.html">Legal Notice</a>
+      <a href="privacy_policy.html">Privacy Policy</a>
+      <a href="#" onclick="terminateSession()">Log out</a>
+    </div>
+
+    <nav class="mainSidebar">
+      <div>
+        <img src="../assets/images/logo.svg" alt="Logo" class="brandIdentity" />
+        <div class="primaryNavigation">
+          <a href="summary.html" class="navigationItem" id="nav-summary">
+            <img src="../assets/images/sidebar_summary.svg" alt="Summary" />Summary
+          </a>
+          <a href="add_task.html" class="navigationItem" id="nav-task">
+            <img src="../assets/images/edit_square.svg" alt="Add Task" />Add Task
+          </a>
+          <a href="board.html" class="navigationItem activeNavItem" id="nav-board">
+            <img src="../assets/images/sidebar_board_white.svg" alt="Board" />Board
+          </a>
+          <a href="contacts.html" class="navigationItem" id="nav-contacts">
+            <img src="../assets/images/sidebar_contacts.svg" alt="Contacts" />Contacts
+          </a>
+        </div>
+      </div>
+      <div class="secondaryNavigation">
+        <a href="legal_notice.html">Legal Notice</a>
+        <a href="privacy_policy.html">Privacy Policy</a>
+      </div>
+    </nav>
+
+    <div class="boardContent" id="board-content">
+      <div class="boardHeader board-firstrow">
+        <h1>Board</h1>
+        <div class="boardControls board-firstrow-right">
+          <div class="searchContainer" id="input-container-find">
+            <input 
+              placeholder="Find Task" 
+              id="search-input" 
+              required 
+              type="text" 
+              oninput="searchTasks()" 
+            />
+            <div class="find-line"></div>
+            <img class="icon px32" src="../assets/images/search.svg" alt="search icon" />
+          </div>
+          <button onclick="openAddTask('to-do')" class="addTaskButton button-dark button-dark-board" type="submit">
+            <p>Add task</p><img class="px18" src="../assets/images/plus_white.svg" alt="" />
+          </button>
+        </div>
+      </div>
+      
+      <div id="input-container-find2" class="d-none">
+        <input placeholder="Find Task" id="find-task2" required type="text" onkeydown="searchTasksMobile()"
+          pattern="^[A-Za-z]+ [A-Za-z]+.*$" title="Please enter at least a first name and a last name" />
+        <div class="find-line"></div>
+        <img class="icon px32" src="../assets/images/search.svg" alt="search icon" />
+      </div>
+
+      <div class="boardColumns board-splits">
+        <div class="column board-split">
+          <div class="columnHeader split-headline">
+            <h3>To do</h3>
+            <img 
+              class="addColumnTask add-task-board-category" 
+              onclick="openAddTask('to-do')" 
+              src="../assets/images/plus_bordered.svg" 
+              alt="Add" 
+            />
+          </div>
+          <div 
+            class="taskList task-area" 
+            id="to-do" 
+            ondrop="drop(event, 'to-do')" 
+            ondragover="allowDrop(event)" 
+            ondragleave="resetBackground(event)"
+          >
+            <!-- Tasks will be added here by JavaScript -->
+          </div>
+        </div>
+
+        <div class="column board-split">
+          <div class="columnHeader split-headline">
+            <h3>In progress</h3>
+            <img 
+              class="addColumnTask add-task-board-category" 
+              onclick="openAddTask('in-progress')" 
+              src="../assets/images/plus_bordered.svg" 
+              alt="Add" 
+            />
+          </div>
+          <div 
+            class="taskList task-area" 
+            id="in-progress" 
+            ondrop="drop(event, 'in-progress')" 
+            ondragover="allowDrop(event)" 
+            ondragleave="resetBackground(event)"
+          >
+            <!-- Tasks will be added here by JavaScript -->
+          </div>
+        </div>
+
+        <div class="column board-split">
+          <div class="columnHeader split-headline">
+            <h3>Await feedback</h3>
+            <img 
+              class="addColumnTask add-task-board-category" 
+              onclick="openAddTask('await-feedback')" 
+              src="../assets/images/plus_bordered.svg" 
+              alt="Add" 
+            />
+          </div>
+          <div 
+            class="taskList task-area" 
+            id="await-feedback" 
+            ondrop="drop(event, 'await-feedback')" 
+            ondragover="allowDrop(event)" 
+            ondragleave="resetBackground(event)"
+          >
+            <!-- Tasks will be added here by JavaScript -->
+          </div>
+        </div>
+
+        <div class="column board-split">
+          <div class="columnHeader split-headline">
+            <h3>Done</h3>
+            <img 
+              class="addColumnTask add-task-board-category" 
+              onclick="openAddTask('done')" 
+              src="../assets/images/plus_bordered.svg" 
+              alt="Add" 
+            />
+          </div>
+          <div 
+            class="taskList task-area" 
+            id="done" 
+            ondrop="drop(event, 'done')" 
+            ondragover="allowDrop(event)" 
+            ondragleave="resetBackground(event)"
+          >
+            <!-- Tasks will be added here by JavaScript -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task Detail Modal -->
+    <div class="add-contact-layer d-none" id="show-task-layer">
+      <div class="show-task-inner-layer" id="show-task-inner-layer">
+        <!-- Task details will be added here by JavaScript -->
+      </div>
+    </div>
+    
+    <!-- Load scripts in the correct order -->
+    <script src="../scripts/api.js"></script>
+    <script src="../scripts/board.js"></script>
+    <script src="../scripts/board_layer.js"></script>
+    <script src="../scripts/board_edit_layer.js"></script>
+    
+    <script>
+      /**
+       * Improved session termination with API logout
+       */
+      async function terminateSession() {
+        try {
+          // Try to call logout API if authenticated
+          if (isAuthenticated()) {
+            await apiPost(API_CONFIG.ENDPOINTS.AUTH.LOGOUT, {});
+          }
+        } catch (error) {
+          console.warn('Logout API call failed:', error);
+        } finally {
+          // Always clear local data regardless of API success
+          clearAuthentication();
+          
+          // Clear additional storage items
+          sessionStorage.clear();
+          localStorage.removeItem('userEmail');
+          localStorage.removeItem('greetingShown');
+          
+          // Redirect to login page
+          window.location.href = 'index.html';
+        }
+      }
+      
+      /**
+       * Toggles the user panel dropdown
+       */
+      function toggleUserPanel() {
+        const userPanel = document.getElementById('user-panel');
+        userPanel.classList.toggle('hidden');
+      }
+    </script>
+  </body>
+</html>

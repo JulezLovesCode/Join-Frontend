@@ -1,0 +1,112 @@
+/* Typography Scale */
+.primaryHeading {
+  font-size: 73px;
+}
+
+.sectionHeading {
+  font-size: 32px;
+}
+
+.subsectionHeading {
+  font-size: 20px;
+}
+
+/* Document Layout */
+.termsContainer {
+  margin: 80px 100px 32px 300px;
+  position: sticky;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.documentHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  width: 100%;
+}
+
+/* Content Sections */
+.instructionalContent {
+  margin-bottom: 80px;
+}
+
+.instructionalContent p {
+  font-size: 16px;
+}
+
+/* UI Components */
+.profileDropdown {
+  display: none;
+  position: fixed;
+  background-color: #2a3647;
+  min-width: 140px;
+  overflow: auto;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  border-radius: 20px 0px 20px 20px;
+  padding: 10px;
+  top: 96px;
+  right: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+
+/* Responsive Layouts */
+@media (max-width: 1425px) {
+  .termsContainer {
+    margin: 80px 100px 32px 300px;
+  }
+
+  .contentSection,
+  .instructionalContent {
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 1050px) {
+  .termsContainer {
+    margin: 0px 50px 32px 80px;
+  }
+
+  .documentHeading .primaryHeading {
+    font-size: 54px;
+  }
+
+  .contentSection,
+  .instructionalContent {
+    margin-top: 20px;
+  }
+
+  .profileDropdown {
+    top: 86px;
+  }
+}
+
+@media (max-width: 500px) {
+  .termsContainer {
+    margin: 80px 30px 32px 30px;
+  }
+
+  .documentHeading .primaryHeading {
+    font-size: 50px;
+  }
+
+  .contentSection,
+  .instructionalContent {
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 380px) {
+  .termsContainer {
+    margin: 0px 10px 32px 10px;
+  }
+
+  .documentHeading .primaryHeading {
+    font-size: 45px;
+  }
+}

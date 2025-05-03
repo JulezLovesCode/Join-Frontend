@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Task - Join</title>
+    <link rel="icon" href="../assets/images/logo.svg" />
+    <link rel="stylesheet" href="../styles/fonts.css" />
+    <link rel="stylesheet" href="../styles/desktop_template.css" />
+    <link rel="stylesheet" href="../styles/add_task.css" />
+    <link rel="stylesheet" href="../styles/add_task_elements.css" />
+    <link rel="stylesheet" href="../styles/add_task_responsive.css" />
+    <link rel="stylesheet" href="../styles/board.css" />
+    
+    <script>
+      // Initialize global state early
+      window.contactSelections = {};
+      window.contactsArray = [];
+      
+      // Define updateSelectedContactsDisplay function
+      window.updateSelectedContactsDisplay = function() {
+        const selectedContactsContainer = document.getElementById('contact-display-container');
+        if (!selectedContactsContainer) return;
+        
+        let selectedContactsHTML = '';
+        
+        if (window.contactsArray && window.contactsArray.length > 0) {
+          window.contactsArray.forEach(contact => {
+            if (window.contactSelections[contact.id]) {
+              const initials = contact.name.split(' ').map(part => part.charAt(0)).join('').toUpperCase();
+              selectedContactsHTML += `
+                <div class="contactDisplay">
+                  <div class="contactAvatar" style="background-color: ${contact.color};">
+                    ${initials}
+                  </div>
+                  <p>${contact.name}</p>
+                </div>
+              `;
+            }
+          });
+        }
+        
+        selectedContactsContainer.innerHTML = selectedContactsHTML;
+      };
+      
+      // Override the toggleContactSelection function before any scripts load
+      window.toggleContactSelection = function(contactId) {
+        console.log("Early toggleContactSelection override with ID:", contactId);
+        
+        // Initialize if needed
+        window.contactSelections = window.contactSelections || {};
+        if (typeof window.contactSelections[contactId] === 'undefined') {
+          window.contactSelections[contactId] = false;
+        }
+        
+        // Toggle selection state
+        window.contactSelections[contactId] = !window.contactSelections[contactId]; 
+        
+        // Update UI
+        const listItem = document.getElementById(`contact-list-item-${contactId}`);
+        const checkbox = document.getElementById(`contact-checkbox-${contactId}`);
+        const checkboxIcon = document.getElementById(`contact-checkbox-icon-${contactId}`);
+        
+        if (listItem && checkbox && checkboxIcon) {
+          if (window.contactSelections[contactId]) {
+            listItem.classList.add('contactItemSelected');
+            checkbox.checked = true;
+            checkboxIcon.src = '../assets/images/checkbox-normal-checked-white.svg';
+          } else {
+            listItem.classList.remove('contactItemSelected');
+            checkbox.checked = false;
+            checkboxIcon.src = '../assets/images/checkbox-normal.svg';
+          }
+        }
+        
+        // Update selected contacts display
+        updateSelectedContactsDisplay();
+      };
+    </script>
+  </head>
+
+  <body onload="initializeTaskCreation()">
+    <header class="appHeader">
+      <div class="headerWrapper">
+        <img
+          onclick="window.location.href='summary.html'"
+          class="logo-header"
+          src="../assets/images/logo-dark.png"
+          alt="Logo"
+        />
+        <p>Kanban Project Management Tool</p>
+        <div class="utilityControls">
+          <img
+            onclick="window.location.href='help.html'"
+            class="supportButton"
+            src="../assets/images/help.svg"
+            alt="Help"
+          />
+          <div
+            id="user-profile"
+            onclick="toggleUserPanel()"
+            class="userProfile"
+          ></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="profileDropdown" id="user-panel">
+      <a onclick="window.location.href='legal_notice.html'" href="#">Legal Notice</a>
+      <a onclick="window.location.href='privacy_policy.html'" href="#">Privacy Policy</a>
+      <a onclick="terminateUserSession()" href="#">Log Out</a>
+    </div>
+
+    <nav class="mainSidebar">
+      <div>
+        <img
+          onclick="window.location.href='summary.html'"
+          src="../assets/images/logo.svg"
+          alt="Logo"
+          class="brandIdentity"
+        />
+        <div class="primaryNavigation">
+          <a
+            href="summary.html"
+            class="navigationItem"
+            id="nav-summary"
+          >
+            <img src="../assets/images/sidebar_summary.svg" alt="Summary" />Summary
+          </a>
+          <a
+            href="add_task.html"
+            class="navigationItem activeNavItem"
+            id="nav-add-task"
+          >
+            <img src="../assets/images/edit_square_white.svg" alt="Add Task" />Add Task
+          </a>
+          <a
+            href="board.html"
+            class="navigationItem"
+            id="nav-board"
+          >
+            <img src="../assets/images/sidebar_board.svg" alt="Board" />Board
+          </a>
+          <a
+            href="contacts.html"
+            class="navigationItem"
+            id="nav-contacts"
+          >
+            <img src="../assets/images/sidebar_contacts.svg" alt="Contacts" />Contacts
+          </a>
+        </div>
+      </div>
+      <div class="secondaryNavigation">
+        <a onclick="window.location.href='privacy_policy.html'" href="#">Privacy Policy</a>
+        <a onclick="window.location.href='legal_notice.html'" href="#">Legal Notice</a>
+      </div>
+    </nav>
+
+    <div class="taskCreationContainer">
+      <div>
+        <h1 class="pageTitle">Add Task</h1>
+      </div>
+      <div class="taskFormLayout">
+        <div class="primaryColumn">
+          <div class="formFieldGroup">
+            <div class="formLabel">Title<span class="span-red">*</span></div>
+            <input
+              class="textEntryField"
+              id="title-input"
+              onkeyup="validateTitleField()"
+              required
+              type="text"
+              placeholder="Enter a title"
+            />
+            <span id="title-validation" class="validationText"></span>
+          </div>
+          
+          <div class="formFieldGroup">
+            <div class="formLabel">Description</div>
+            <textarea
+              placeholder="Enter a Description"
+              id="description-input"
+              class="textareaField"
+            ></textarea>
+          </div>
+          
+          <div class="formFieldGroup">
+            <div class="formLabel">Assigned to</div>
+            <div
+              id="contact-input-container"
+              onclick="toggleContactSelector()"
+              class="dropdownSelector"
+            >
+              <span>Select contact to assign</span>
+              <img src="../assets/images/arrow-down.svg" alt="Open" />
+            </div>
+            <div
+              class="contactsList hidden"
+              id="contact-selector-panel"
+              onclick="event.stopPropagation()"
+            ></div>
+            <div id="contact-display-container" class="relativePositioned"></div>
+          </div>
+        </div>
+
+        <div class="columnDivider"></div>
+
+        <div class="secondaryColumn">
+          <div class="formFieldGroup">
+            <div class="formLabel">Due date<span class="span-red">*</span></div>
+            <input
+              class="dateSelector"
+              onclick="activateDatePicker()"
+              id="due-date-input"
+              required
+              type="date"
+            />
+            <span id="date-validation" class="validationText"></span>
+          </div>
+
+          <div class="formFieldGroup priorityGroup">
+            <div class="formLabel">Priority</div>
+            <div class="buttonContainer">
+              <button
+                id="highPriorityBtn"
+                onclick="selectHighPriority()"
+                class="priorityButton"
+              >
+                Urgent <img id="highPriorityIcon" src="../assets/images/high.svg" />
+              </button>
+              <button
+                id="mediumPriorityBtn"
+                onclick="selectMediumPriority()"
+                class="priorityButton"
+              >
+                Medium
+                <img id="mediumPriorityIcon" src="../assets/images/medium.svg" />
+              </button>
+              <button
+                id="lowPriorityBtn"
+                onclick="selectLowPriority()"
+                class="priorityButton"
+              >
+                Low <img id="lowPriorityIcon" src="../assets/images/low.svg" />
+              </button>
+            </div>
+          </div>
+
+          <div class="formFieldGroup">
+            <div class="formLabel">
+              Category<span class="span-red">*</span>
+            </div>
+            <div class="dropdownSelector" onclick="toggleCategorySelector()">
+              <span id="task-category-display">Select task category</span>
+              <img src="../assets/images/arrow-down.svg" alt="Open" />
+            </div>
+            <div id="category-validation" class="validationText"></div>
+            <div class="dropdownMenu hidden" id="category-selector"></div>
+          </div>
+
+          <div class="formFieldGroup">
+            <div class="formLabel">Subtasks</div>
+            <div class="subTaskInputGroup">
+              <input
+                placeholder="Add new subtask"
+                onclick="initializeSubtaskInput()"
+                id="subtaskTextField"
+                class="subTaskTextField"
+              />
+              <div class="subtaskAddButton" id="subtaskAddButton">
+                <img
+                  onclick="initializeSubtaskInput()"
+                  src="../assets/images/plus.svg"
+                  alt="Add"
+                />
+              </div>
+              <div class="subtaskInputActions hidden" id="subtaskControls"></div>
+            </div>
+            <div id="subtaskValidation" class="validationText"></div>
+            <div class="subtaskScrollArea" id="subtaskListContainer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="taskFormFooter">
+        <div class="requiredNotice">
+          <p><span class="span-red">*</span>This field is required</p>
+        </div>
+        <div class="mobileActionBar">
+          <div class="requiredNoticeMobile hidden">
+            <p><span class="span-red">*</span>This field is required</p>
+            <div>
+              <button
+                onclick="createNewTask('to-do')"
+                class="actionButtonMobile"
+              >
+                Create Task <img src="../assets/images/check-white.svg" alt="" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="actionsContainer">
+          <button onclick="resetTaskForm()" class="actionButtonSecondary">
+            Clear <img src="../assets/images/x.svg" alt="Clear" />
+          </button>
+          <button
+            id="submit-task"
+            onclick="createNewTask()"
+            class="actionButtonPrimary"
+          >
+            Create Task <img src="../assets/images/check-white.svg" alt="Create" />
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="task-confirmation" class="taskConfirmation">
+      <img src="../assets/images/Added to board.svg" alt="Task added to board" />
+    </div>
+    
+    <!-- Main scripts for app functionality -->
+    <script src="../scripts/api_config.js"></script>
+    <script src="../scripts/error_handling.js"></script>
+    <script src="../scripts/api.js"></script>
+    <script src="../scripts/add_task.js"></script>
+    <script src="../scripts/add_task_subtasks.js"></script>
+    <script>
+      // Fix the contact selection issue by injecting a direct override
+      document.addEventListener('DOMContentLoaded', function() {
+        // Override the toggleContactSelection function to handle contact selection properly
+        window.toggleContactSelection = function(contactId) {
+          console.log("Direct contact selection for ID:", contactId);
+          
+          // Ensure we have the selections object
+          window.contactSelections = window.contactSelections || {};
+          
+          // Toggle selection state
+          window.contactSelections[contactId] = !window.contactSelections[contactId];
+          
+          // Update UI
+          const listItem = document.getElementById(`contact-list-item-${contactId}`);
+          const checkbox = document.getElementById(`contact-checkbox-${contactId}`);
+          const checkboxIcon = document.getElementById(`contact-checkbox-icon-${contactId}`);
+          
+          if (listItem && checkbox && checkboxIcon) {
+            if (window.contactSelections[contactId]) {
+              listItem.classList.add('contactItemSelected');
+              checkbox.checked = true;
+              checkboxIcon.src = '../assets/images/checkbox-normal-checked-white.svg';
+            } else {
+              listItem.classList.remove('contactItemSelected');
+              checkbox.checked = false;
+              checkboxIcon.src = '../assets/images/checkbox-normal.svg';
+            }
+          }
+          
+          // Display selected contacts
+          const selectedContactsContainer = document.getElementById('contact-display-container');
+          if (selectedContactsContainer && window.contactsArray) {
+            let selectedContactsHTML = '';
+            
+            window.contactsArray.forEach(contact => {
+              if (window.contactSelections[contact.id]) {
+                const initials = contact.name.split(' ').map(part => part.charAt(0)).join('').toUpperCase();
+                selectedContactsHTML += `
+                  <div class="contactDisplay">
+                    <div class="contactAvatar" style="background-color: ${contact.color};">
+                      ${initials}
+                    </div>
+                    <p>${contact.name}</p>
+                  </div>
+                `;
+              }
+            });
+            
+            selectedContactsContainer.innerHTML = selectedContactsHTML;
+          }
+        };
+      });
+    </script>
+    <script src="../scripts/add_task_contacts.js"></script>
+    <script src="../scripts/board.js"></script>
+    
+    <script>
+      // Direct inline function as fallback if script loading fails
+      function toggleContactSelector() {
+        console.log("Inline toggleContactSelector called");
+        const contactSelectorPanel = document.getElementById('contact-selector-panel');
+        if (!contactSelectorPanel) {
+          console.error("Contact selector panel not found");
+          return;
+        }
+        
+        const wasHidden = contactSelectorPanel.classList.contains('hidden');
+        contactSelectorPanel.classList.toggle('hidden');
+        
+        if (wasHidden) {
+          // Fetch contacts directly from the backend API
+          console.log("Fetching contacts directly from API");
+          const token = localStorage.getItem('token');
+          const apiUrl = API_CONFIG ? API_CONFIG.BASE_URL + API_CONFIG.ENDPOINTS.CONTACTS : 'http://127.0.0.1:8000/api/contacts/';
+          
+          fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Token ${token}` : ''
+            }
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`API error: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log("API returned contacts:", data);
+            // Process contacts data
+            if (Array.isArray(data)) {
+              window.contactsArray = data;
+            } else if (typeof data === 'object') {
+              window.contactsArray = Object.values(data);
+            } else {
+              window.contactsArray = [];
+            }
+            
+            // Generate contact list HTML
+            renderContactListHTML();
+          })
+          .catch(error => {
+            console.error("Error fetching contacts from API:", error);
+            window.contactsArray = [];
+            renderContactListHTML();
+          });
+          
+          // Create HTML directly if renderContactList isn't working
+          let contactsHTML = '';
+          window.contactsArray.forEach(contact => {
+            const initials = contact.name.split(' ').map(part => part.charAt(0)).join('').toUpperCase();
+            contactsHTML += `
+              <div id="contact-list-item-${contact.id}" class="contactItem" onclick="event.stopPropagation(); selectContactItem(${contact.id})">
+                <div class="contactDisplay">
+                  <div class="contactAvatar" style="background-color: ${contact.color};">
+                    ${initials}
+                  </div>
+                  <p>${contact.name}</p>
+                </div>
+                <div class="contactSelectionBox">
+                  <input type="checkbox" class="contact-checkbox" id="contact-checkbox-${contact.id}" 
+                    data-contact-id="${contact.id}" hidden>
+                  <img id="contact-checkbox-icon-${contact.id}" src="../assets/images/checkbox-normal.svg" alt="checkbox">
+                </div>
+              </div>
+            `;
+          });
+          
+          contactSelectorPanel.innerHTML = contactsHTML;
+          
+          // Add event listener to prevent event bubbling
+          contactSelectorPanel.addEventListener('click', function(event) {
+            event.stopPropagation();
+          });
+          
+          // If renderContactList is available, also try to use it
+          if (typeof window.renderContactList === 'function') {
+            window.renderContactList();
+          }
+        }
+      }
+      
+      // Helper function to select contacts
+      function selectContactItem(contactId) {
+        console.log(`Selecting contact ${contactId}`);
+        
+        // Initialize selections object if needed
+        window.contactSelections = window.contactSelections || {};
+        
+        // Toggle selection
+        window.contactSelections[contactId] = !window.contactSelections[contactId];
+        
+        // Update UI
+        const listItem = document.getElementById(`contact-list-item-${contactId}`);
+        const checkbox = document.getElementById(`contact-checkbox-${contactId}`);
+        const checkboxIcon = document.getElementById(`contact-checkbox-icon-${contactId}`);
+        
+        if (window.contactSelections[contactId]) {
+          listItem.classList.add('contactItemSelected');
+          checkboxIcon.src = '../assets/images/checkbox-normal-checked-white.svg';
+        } else {
+          listItem.classList.remove('contactItemSelected');
+          checkboxIcon.src = '../assets/images/checkbox-normal.svg';
+        }
+        
+        // Update selected contacts display
+        updateSelectedContactsDisplay();
+      }
+      
+      // Function to update the selected contacts display
+      function updateSelectedContactsDisplay() {
+        const selectedContactsContainer = document.getElementById('contact-display-container');
+        if (!selectedContactsContainer) return;
+        
+        let selectedContactsHTML = '';
+        
+        if (window.contactsArray && Array.isArray(window.contactsArray)) {
+          window.contactsArray.forEach(contact => {
+            if (contact && contact.id && window.contactSelections[contact.id]) {
+              const initials = contact.name ? contact.name.split(' ').map(part => part.charAt(0)).join('').toUpperCase() : '?';
+              const contactColor = contact.color || '#2A3647';
+              selectedContactsHTML += `
+                <div class="contactDisplay">
+                  <div class="contactAvatar" style="background-color: ${contactColor};">
+                    ${initials}
+                  </div>
+                  <p>${contact.name || 'Unknown Contact'}</p>
+                </div>
+              `;
+            }
+          });
+        }
+        
+        selectedContactsContainer.innerHTML = selectedContactsHTML;
+      }
+      
+      // Helper function to render contact list HTML when API data is received
+      function renderContactListHTML() {
+        const contactSelectorPanel = document.getElementById('contact-selector-panel');
+        if (!contactSelectorPanel) return;
+        
+        let contactsHTML = '';
+        
+        if (window.contactsArray && window.contactsArray.length > 0) {
+          window.contactsArray.forEach(contact => {
+            if (!contact || !contact.id) return;
+            
+            const initials = contact.name ? contact.name.split(' ').map(part => part.charAt(0)).join('').toUpperCase() : '?';
+            const isSelected = window.contactSelections[contact.id] === true;
+            const selectedClass = isSelected ? 'contactItemSelected' : '';
+            const contactColor = contact.color || '#2A3647';
+            
+            contactsHTML += `
+              <div id="contact-list-item-${contact.id}" class="contactItem ${selectedClass}" onclick="event.stopPropagation(); toggleContactSelection(${contact.id})">
+                <div class="contactDisplay">
+                  <div class="contactAvatar" style="background-color: ${contactColor};">
+                    ${initials}
+                  </div>
+                  <p>${contact.name || 'Unknown Contact'}</p>
+                </div>
+                <div class="contactSelectionBox">
+                  <input type="checkbox" class="contact-checkbox" id="contact-checkbox-${contact.id}" 
+                    data-contact-id="${contact.id}" ${isSelected ? 'checked' : ''} hidden>
+                  <img id="contact-checkbox-icon-${contact.id}" src="../assets/images/${isSelected ? 'checkbox-normal-checked-white.svg' : 'checkbox-normal.svg'}" alt="checkbox">
+                </div>
+              </div>
+            `;
+          });
+        } else {
+          contactsHTML = '<div class="contactItem">No contacts available</div>';
+        }
+        
+        contactSelectorPanel.innerHTML = contactsHTML;
+      }
+    </script>
+    
+    <!-- Final override to ensure contact selection works -->
+    <script>
+      // Make one final override after all scripts have loaded
+      setTimeout(function() {
+        window.toggleContactSelection = function(contactId) {
+          console.log("Final override contact selection for ID:", contactId);
+          
+          // Ensure we have the selections object
+          window.contactSelections = window.contactSelections || {};
+          
+          // Toggle selection state
+          window.contactSelections[contactId] = !window.contactSelections[contactId];
+          
+          // Update UI
+          const listItem = document.getElementById(`contact-list-item-${contactId}`);
+          const checkbox = document.getElementById(`contact-checkbox-${contactId}`);
+          const checkboxIcon = document.getElementById(`contact-checkbox-icon-${contactId}`);
+          
+          if (listItem && checkbox && checkboxIcon) {
+            if (window.contactSelections[contactId]) {
+              listItem.classList.add('contactItemSelected');
+              checkbox.checked = true;
+              checkboxIcon.src = '../assets/images/checkbox-normal-checked-white.svg';
+            } else {
+              listItem.classList.remove('contactItemSelected');
+              checkbox.checked = false;
+              checkboxIcon.src = '../assets/images/checkbox-normal.svg';
+            }
+          }
+          
+          // Display selected contacts
+          const selectedContactsContainer = document.getElementById('contact-display-container');
+          if (selectedContactsContainer && window.contactsArray) {
+            let selectedContactsHTML = '';
+            
+            window.contactsArray.forEach(contact => {
+              if (window.contactSelections[contact.id]) {
+                const initials = contact.name.split(' ').map(part => part.charAt(0)).join('').toUpperCase();
+                selectedContactsHTML += `
+                  <div class="contactDisplay">
+                    <div class="contactAvatar" style="background-color: ${contact.color};">
+                      ${initials}
+                    </div>
+                    <p>${contact.name}</p>
+                  </div>
+                `;
+              }
+            });
+            
+            selectedContactsContainer.innerHTML = selectedContactsHTML;
+          }
+        };
+      }, 500); // Delay to ensure it overrides any other script
+    </script>
+  </body>
+</html>

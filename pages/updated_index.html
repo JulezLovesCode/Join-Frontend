@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Join - Login</title>
+    <link rel="icon" href="../assets/images/logo.svg" />
+    <link rel="stylesheet" href="../styles/fonts.css" />
+    <link rel="stylesheet" href="../style.css" />
+    <!-- Adding API config script -->
+    <script src="../scripts/api_config.js"></script>
+    <script src="../scripts/error_handling.js"></script>
+  </head>
+  <body>
+    <div class="initialView" id="introAnimation">
+      <img
+        id="logo-animation"
+        src="../assets/images/Capa 2.png"
+        alt="Responsive Image"
+        onload="setTimeout(function() { 
+          document.getElementById('introAnimation').classList.add('animated');
+          setTimeout(function() {
+            document.getElementById('mainContent').classList.add('fadeIn');
+            document.getElementById('registrationSection').classList.add('fadeIn');
+            document.getElementById('footerLinks').classList.add('fadeIn');
+          }, 1000);
+        }, 300);"
+      />
+    </div>
+    <div class="registrationArea" id="registrationSection">
+      <div>
+        <p>Not A Join User?</p>
+        <button
+          class="actionButton standardPadding registrationBtn"
+          id="signupButton"
+          onclick="window.location.href='signup.html';"
+        >
+          Sign up
+        </button>
+      </div>
+    </div>
+    <div class="mainContainer" id="mainContent">
+      <div class="authPanel">
+        <div class="headingWithIndicator">
+          <h1>Log in</h1>
+          <div class="accentIndicator"></div>
+        </div>
+        <form class="authForm" id="signinForm">
+          <div class="formControls">
+            <div class="fieldWrapper">
+              <input
+                placeholder="Email"
+                class="credentialField"
+                type="email"
+                id="loginEmail"
+              /><img class="emailIcon" src="../assets/images/mail.png" alt="" />
+            </div>
+            <div class="fieldWrapper" id="pasowrdConteiner">
+              <input
+                placeholder="Password"
+                class="credentialField"
+                type="password"
+                id="loginPassword"
+              />
+              <div class="visibilityToggle">
+                <img
+                  class="visibilityIcon"
+                  src="../assets/images/lock.png"
+                  id="visibility_toggle"
+                  alt=""
+                  onclick="togglePasswordVisibility()"
+                />
+              </div>
+            </div>
+            <div class="validationError" id="wrongPasswordConteiner"></div>
+          </div>
+          <div class="persistenceControl" onclick="toggleRememberOption()">
+            <div class="toggleControl">
+              <img id="checkbox" src="../assets/images/Rectangle1.png" />
+            </div>
+            <div>
+              <p>Remember me</p>
+            </div>
+          </div>
+          <div class="actionControls">
+            <button
+              class="actionButton mediumPadding standardHeight"
+              type="submit"
+              id="loginButton"
+            >
+              Log in
+            </button>
+            <button
+              class="secondaryButton mediumPadding primaryTypography standardHeight"
+              id="guestLoginButton"
+              type="button"
+            >
+              Guest Log in
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="navigationLinks" id="footerLinks">
+      <a href="./privacy_policy_nologin.html">Privacy Policy</a>
+      <a href="./legal_notice_nologin.html">Legal notice</a>
+    </div>
+    
+    <!-- Loading indicator for API operations -->
+    <div id="api-loading-indicator" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 9999;">
+      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 8px; text-align: center;">
+        <div class="loading-spinner" style="display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #2A3647; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <p style="margin-top: 10px;">Please wait...</p>
+      </div>
+    </div>
+    
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #2A3647;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+    </style>
+    
+    <!-- Scripts -->
+    <script src="../scripts/toggle.js"></script>
+    <script>
+      /**
+       * Shows the loading indicator
+       */
+      function showLoginLoader() {
+        document.getElementById('api-loading-indicator').style.display = 'block';
+      }
+      
+      /**
+       * Hides the loading indicator
+       */
+      function hideLoginLoader() {
+        document.getElementById('api-loading-indicator').style.display = 'none';
+      }
+      
+      /**
+       * Toggle password visibility
+       */
+      function togglePasswordVisibility() {
+        const passwordField = document.getElementById('loginPassword');
+        const visibilityToggle = document.getElementById('visibility_toggle');
+        
+        if (passwordField.type === 'password') {
+          passwordField.type = 'text';
+          visibilityToggle.src = '../assets/images/visibility.png';
+        } else {
+          passwordField.type = 'password';
+          visibilityToggle.src = '../assets/images/lock.png';
+        }
+      }
+      
+      /**
+       * Initialize the login form
+       */
+      window.addEventListener('load', function() {
+        // Check if credentials are saved
+        const saveCredentials = localStorage.getItem('saveCredentials');
+        const checkbox = document.getElementById('checkbox');
+        const emailField = document.getElementById('loginEmail');
+        const passwordField = document.getElementById('loginPassword');
+        
+        if (saveCredentials === 'true') {
+          checkbox.src = '../assets/images/Rectangle2.png';
+          emailField.value = localStorage.getItem('userIdentifier') || '';
+          passwordField.value = localStorage.getItem('userSecret') || '';
+        }
+        
+        // If already authenticated, update UI or redirect
+        if (isAuthenticated()) {
+          console.log('User is already authenticated, redirecting to summary');
+          window.location.href = 'summary.html';
+          return;
+        }
+        
+        // Set up form submission
+        document.getElementById('signinForm').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          showLoginLoader();
+          
+          const email = emailField.value;
+          const password = passwordField.value;
+          
+          try {
+            // Use the API config module to authenticate
+            const authData = await apiPost(
+              API_CONFIG.ENDPOINTS.AUTH.LOGIN,
+              { email, password },
+              false
+            );
+            
+            if (authData && authData.token) {
+              // Use central auth handler
+              handleAuthentication(authData);
+              
+              // Save credentials if "remember me" is checked
+              if (localStorage.getItem('saveCredentials') === 'true') {
+                localStorage.setItem('userIdentifier', email);
+                localStorage.setItem('userSecret', password);
+              }
+              
+              // Redirect to summary page
+              window.location.href = 'summary.html';
+            } else {
+              document.getElementById('wrongPasswordConteiner').textContent = 
+                'Authentication failed. Please check your credentials.';
+              document.getElementById('pasowrdConteiner').classList.add('login-red');
+            }
+          } catch (error) {
+            console.error('Login error:', error);
+            hideLoginLoader();
+            
+            // Try local credentials as fallback
+            const storedEmail = localStorage.getItem('userIdentifier');
+            const storedPassword = localStorage.getItem('userSecret');
+            
+            if (email === storedEmail && password === storedPassword && storedEmail && storedPassword) {
+              console.log('Falling back to local credentials due to server error');
+              
+              // Create mock auth data and authenticate locally
+              const mockAuthData = {
+                token: btoa(email + ':' + Date.now()),
+                username: email.split('@')[0]
+              };
+              
+              handleAuthentication(mockAuthData);
+              window.location.href = 'summary.html';
+            } else {
+              // Show error based on type
+              const errorInfo = handleApiError(error);
+              
+              let errorMessage = 'Login failed. ';
+              
+              if (errorInfo.type === ERROR_TYPES.NETWORK) {
+                errorMessage += 'Please check your connection and try again.';
+              } else if (errorInfo.type === ERROR_TYPES.AUTH) {
+                errorMessage = 'Incorrect email or password.';
+              } else {
+                errorMessage += errorInfo.message;
+              }
+              
+              document.getElementById('wrongPasswordConteiner').textContent = errorMessage;
+              document.getElementById('pasowrdConteiner').classList.add('login-red');
+            }
+          } finally {
+            hideLoginLoader();
+          }
+        });
+        
+        // Guest login
+        document.getElementById('guestLoginButton').addEventListener('click', async function() {
+          showLoginLoader();
+          
+          try {
+            // Try to use guest login API endpoint
+            const guestResponse = await apiPost(API_CONFIG.ENDPOINTS.AUTH.GUEST_LOGIN, {}, false);
+            
+            if (guestResponse && guestResponse.token) {
+              // Use central auth handler with guest credentials
+              handleAuthentication({
+                token: guestResponse.token,
+                username: 'Guest'
+              });
+            } else {
+              // Fallback to local guest session
+              sessionStorage.setItem(API_CONFIG.USERNAME_STORAGE_KEY, 'Guest');
+            }
+          } catch (error) {
+            console.warn('Guest login API failed, using local guest session:', error);
+            sessionStorage.setItem(API_CONFIG.USERNAME_STORAGE_KEY, 'Guest');
+          } finally {
+            // Reset greeting and redirect to summary
+            localStorage.removeItem('greetingShown');
+            hideLoginLoader();
+            window.location.href = 'summary.html';
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
