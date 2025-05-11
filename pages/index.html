@@ -104,10 +104,10 @@
     </div>
   </body>
   <script>
-    // Basic API configuration
+    
     const API_BASE_URL = 'http://127.0.0.1:8000/';
     
-    // Toggle password visibility
+    
     function togglePasswordVisibility() {
       const passwordField = document.getElementById('loginPassword');
       const visibilityToggle = document.getElementById('visibility_toggle');
@@ -121,7 +121,7 @@
       }
     }
     
-    // Toggle "remember me" option
+    
     function toggleRememberOption() {
       const checkboxElement = document.getElementById('checkbox');
       const isCurrentlyChecked = checkboxElement.src.includes('Rectangle2.png');
@@ -133,7 +133,7 @@
         checkboxElement.src = '../assets/images/Rectangle2.png';
         localStorage.setItem('saveCredentials', 'true');
         
-        // Store credentials if available
+        
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
         if (email) localStorage.setItem('userIdentifier', email);
@@ -141,9 +141,9 @@
       }
     }
     
-    // Initialize login form
+    
     window.addEventListener('load', function() {
-      // Check if credentials are saved
+      
       const saveCredentials = localStorage.getItem('saveCredentials');
       const checkbox = document.getElementById('checkbox');
       const emailField = document.getElementById('loginEmail');
@@ -155,7 +155,7 @@
         passwordField.value = localStorage.getItem('userSecret') || '';
       }
       
-      // Set up form submission
+      
       document.getElementById('signinForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -163,35 +163,35 @@
           const email = emailField.value;
           const password = passwordField.value;
           
-          // Check for locally stored credentials first
+          
           const storedEmail = localStorage.getItem('userIdentifier');
           const storedPassword = localStorage.getItem('userSecret');
           
-          // Allow login if credentials match what was saved during signup
+          
           if (email === storedEmail && password === storedPassword) {
             console.log('Logging in with locally stored credentials');
             
-            // Generate a mock token
+            
             const mockToken = btoa(email + ':' + Date.now());
             
-            // Store authentication data
+            
             localStorage.setItem('token', mockToken);
-            localStorage.setItem('userName', email.split('@')[0]); // Use part before @ as username
+            localStorage.setItem('userName', email.split('@')[0]); 
             sessionStorage.setItem('userName', email.split('@')[0]);
             
-            // Save credentials if "remember me" is checked
+            
             if (localStorage.getItem('saveCredentials') === 'true') {
               localStorage.setItem('userIdentifier', email);
               localStorage.setItem('userSecret', password);
             }
             
-            // Redirect to summary page
+            
             window.location.href = 'summary.html';
             return;
           }
           
-          // Try backend login if local credentials don't match
-          // Send login request
+          
+          
           const response = await fetch(`${API_BASE_URL}api/auth/login-token/`, {
             method: 'POST',
             headers: {
@@ -200,10 +200,10 @@
             body: JSON.stringify({ email, password }),
           });
           
-          // Get the response text first
+          
           const responseText = await response.text();
           
-          // Try to parse as JSON, but handle non-JSON responses gracefully
+          
           let data;
           try {
             data = responseText ? JSON.parse(responseText) : {};
@@ -215,49 +215,49 @@
           if (response.ok) {
             console.log('Login successful', data);
             
-            // Store authentication data
+            
             if (data.token) {
               localStorage.setItem('token', data.token);
               
-              // Extract username from different possible formats
+              
               let username = '';
               if (data.user && data.user.username) {
                 username = data.user.username;
               } else if (data.username) {
                 username = data.username;
               } else {
-                // Fallback to email without domain
+                
                 username = email.split('@')[0];
               }
               
               localStorage.setItem('userName', username);
               sessionStorage.setItem('userName', username);
               
-              // Store user profile if available
+              
               if (data.user) {
                 localStorage.setItem('userProfile', JSON.stringify(data.user));
               }
             } else {
-              // If no token but still successful, create a mock token
+              
               const mockToken = btoa(email + ':' + Date.now());
               localStorage.setItem('token', mockToken);
               localStorage.setItem('userName', email.split('@')[0]);
               sessionStorage.setItem('userName', email.split('@')[0]);
             }
             
-            // Save credentials if "remember me" is checked
+            
             if (localStorage.getItem('saveCredentials') === 'true') {
               localStorage.setItem('userIdentifier', email);
               localStorage.setItem('userSecret', password);
             }
             
-            // Redirect to summary page
+            
             window.location.href = 'summary.html';
           } else {
-            // Handle login failure
+            
             console.error('Login failed:', data);
             
-            // Extract error message from different possible formats
+            
             let errorMessage = 'Invalid email or password';
             if (typeof data === 'object') {
               if (data.detail) errorMessage = data.detail;
@@ -268,14 +268,14 @@
               }
             }
             
-            // Show error message
+            
             document.getElementById('wrongPasswordConteiner').textContent = errorMessage;
             document.getElementById('pasowrdConteiner').classList.add('errorState');
           }
         } catch (error) {
           console.error('Login error:', error);
           
-          // If the backend is not available, try local credentials as fallback
+          
           const email = emailField.value;
           const password = passwordField.value;
           const storedEmail = localStorage.getItem('userIdentifier');
@@ -284,13 +284,13 @@
           if (email === storedEmail && password === storedPassword) {
             console.log('Falling back to local credentials due to server error');
             
-            // Use stored credentials as backup
+            
             const mockToken = btoa(email + ':' + Date.now());
             localStorage.setItem('token', mockToken);
             
-            // Get username from localStorage if it exists
+            
             const storedUserProfile = localStorage.getItem('userProfile');
-            let username = email.split('@')[0]; // Default
+            let username = email.split('@')[0]; 
             
             if (storedUserProfile) {
               try {
@@ -306,24 +306,24 @@
             localStorage.setItem('userName', username);
             sessionStorage.setItem('userName', username);
             
-            // Redirect to summary
+            
             window.location.href = 'summary.html';
           } else {
-            // Show a network error message
+            
             document.getElementById('wrongPasswordConteiner').textContent = 'Login failed. Please check your connection and try again.';
             document.getElementById('pasowrdConteiner').classList.add('errorState');
           }
         }
       });
       
-      // Guest login
+      
       document.getElementById('guestLoginButton').addEventListener('click', function() {
         localStorage.removeItem('greetingShown');
         sessionStorage.setItem('userName', 'Guest');
         window.location.href = 'summary.html';
       });
       
-      // Signup button
+      
       document.getElementById('signupButton').addEventListener('click', function() {
         window.location.href = 'signup.html';
       });

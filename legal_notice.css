@@ -1,4 +1,4 @@
-/* Typography Scale */
+
 .primaryHeading {
   font-size: 73px;
 }
@@ -11,7 +11,7 @@
   font-size: 20px;
 }
 
-/* Document Layout */
+
 .termsContainer {
   margin: 80px 100px 32px 300px;
   position: sticky;
@@ -30,7 +30,7 @@
   width: 100%;
 }
 
-/* Content Sections */
+
 .instructionalContent {
   margin-bottom: 80px;
 }
@@ -39,7 +39,7 @@
   font-size: 16px;
 }
 
-/* UI Components */
+
 .profileDropdown {
   display: none;
   position: fixed;
@@ -55,7 +55,7 @@
   cursor: pointer;
 }
 
-/* Responsive Layouts */
+
 @media (max-width: 1425px) {
   .termsContainer {
     margin: 80px 100px 32px 300px;

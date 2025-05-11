@@ -13,11 +13,11 @@
     <link rel="stylesheet" href="../styles/board.css" />
     
     <script>
-      // Initialize global state early
+      
       window.contactSelections = {};
       window.contactsArray = [];
       
-      // Define updateSelectedContactsDisplay function
+      
       window.updateSelectedContactsDisplay = function() {
         const selectedContactsContainer = document.getElementById('contact-display-container');
         if (!selectedContactsContainer) return;
@@ -43,20 +43,20 @@
         selectedContactsContainer.innerHTML = selectedContactsHTML;
       };
       
-      // Override the toggleContactSelection function before any scripts load
+      
       window.toggleContactSelection = function(contactId) {
         console.log("Early toggleContactSelection override with ID:", contactId);
         
-        // Initialize if needed
+        
         window.contactSelections = window.contactSelections || {};
         if (typeof window.contactSelections[contactId] === 'undefined') {
           window.contactSelections[contactId] = false;
         }
         
-        // Toggle selection state
+        
         window.contactSelections[contactId] = !window.contactSelections[contactId]; 
         
-        // Update UI
+        
         const listItem = document.getElementById(`contact-list-item-${contactId}`);
         const checkbox = document.getElementById(`contact-checkbox-${contactId}`);
         const checkboxIcon = document.getElementById(`contact-checkbox-icon-${contactId}`);
@@ -73,7 +73,7 @@
           }
         }
         
-        // Update selected contacts display
+        
         updateSelectedContactsDisplay();
       };
     </script>
@@ -318,26 +318,26 @@
       <img src="../assets/images/Added to board.svg" alt="Task added to board" />
     </div>
     
-    <!-- Main scripts for app functionality -->
+    
     <script src="../scripts/api_config.js"></script>
     <script src="../scripts/error_handling.js"></script>
     <script src="../scripts/api.js"></script>
     <script src="../scripts/add_task.js"></script>
     <script src="../scripts/add_task_subtasks.js"></script>
     <script>
-      // Fix the contact selection issue by injecting a direct override
+      
       document.addEventListener('DOMContentLoaded', function() {
-        // Override the toggleContactSelection function to handle contact selection properly
+        
         window.toggleContactSelection = function(contactId) {
           console.log("Direct contact selection for ID:", contactId);
           
-          // Ensure we have the selections object
+          
           window.contactSelections = window.contactSelections || {};
           
-          // Toggle selection state
+          
           window.contactSelections[contactId] = !window.contactSelections[contactId];
           
-          // Update UI
+          
           const listItem = document.getElementById(`contact-list-item-${contactId}`);
           const checkbox = document.getElementById(`contact-checkbox-${contactId}`);
           const checkboxIcon = document.getElementById(`contact-checkbox-icon-${contactId}`);
@@ -354,7 +354,7 @@
             }
           }
           
-          // Display selected contacts
+          
           const selectedContactsContainer = document.getElementById('contact-display-container');
           if (selectedContactsContainer && window.contactsArray) {
             let selectedContactsHTML = '';
@@ -382,7 +382,7 @@
     <script src="../scripts/board.js"></script>
     
     <script>
-      // Direct inline function as fallback if script loading fails
+      
       function toggleContactSelector() {
         console.log("Inline toggleContactSelector called");
         const contactSelectorPanel = document.getElementById('contact-selector-panel');
@@ -395,7 +395,7 @@
         contactSelectorPanel.classList.toggle('hidden');
         
         if (wasHidden) {
-          // Fetch contacts directly from the backend API
+          
           console.log("Fetching contacts directly from API");
           const token = localStorage.getItem('token');
           const apiUrl = API_CONFIG ? API_CONFIG.BASE_URL + API_CONFIG.ENDPOINTS.CONTACTS : 'http://127.0.0.1:8000/api/contacts/';
@@ -415,7 +415,7 @@
           })
           .then(data => {
             console.log("API returned contacts:", data);
-            // Process contacts data
+            
             if (Array.isArray(data)) {
               window.contactsArray = data;
             } else if (typeof data === 'object') {
@@ -424,7 +424,7 @@
               window.contactsArray = [];
             }
             
-            // Generate contact list HTML
+            
             renderContactListHTML();
           })
           .catch(error => {
@@ -433,7 +433,7 @@
             renderContactListHTML();
           });
           
-          // Create HTML directly if renderContactList isn't working
+          
           let contactsHTML = '';
           window.contactsArray.forEach(contact => {
             const initials = contact.name.split(' ').map(part => part.charAt(0)).join('').toUpperCase();
@@ -456,29 +456,29 @@
           
           contactSelectorPanel.innerHTML = contactsHTML;
           
-          // Add event listener to prevent event bubbling
+          
           contactSelectorPanel.addEventListener('click', function(event) {
             event.stopPropagation();
           });
           
-          // If renderContactList is available, also try to use it
+          
           if (typeof window.renderContactList === 'function') {
             window.renderContactList();
           }
         }
       }
       
-      // Helper function to select contacts
+      
       function selectContactItem(contactId) {
         console.log(`Selecting contact ${contactId}`);
         
-        // Initialize selections object if needed
+        
         window.contactSelections = window.contactSelections || {};
         
-        // Toggle selection
+        
         window.contactSelections[contactId] = !window.contactSelections[contactId];
         
-        // Update UI
+        
         const listItem = document.getElementById(`contact-list-item-${contactId}`);
         const checkbox = document.getElementById(`contact-checkbox-${contactId}`);
         const checkboxIcon = document.getElementById(`contact-checkbox-icon-${contactId}`);
@@ -491,11 +491,11 @@
           checkboxIcon.src = '../assets/images/checkbox-normal.svg';
         }
         
-        // Update selected contacts display
+        
         updateSelectedContactsDisplay();
       }
       
-      // Function to update the selected contacts display
+      
       function updateSelectedContactsDisplay() {
         const selectedContactsContainer = document.getElementById('contact-display-container');
         if (!selectedContactsContainer) return;
@@ -522,7 +522,7 @@
         selectedContactsContainer.innerHTML = selectedContactsHTML;
       }
       
-      // Helper function to render contact list HTML when API data is received
+      
       function renderContactListHTML() {
         const contactSelectorPanel = document.getElementById('contact-selector-panel');
         if (!contactSelectorPanel) return;
@@ -562,20 +562,20 @@
       }
     </script>
     
-    <!-- Final override to ensure contact selection works -->
+    
     <script>
-      // Make one final override after all scripts have loaded
+      
       setTimeout(function() {
         window.toggleContactSelection = function(contactId) {
           console.log("Final override contact selection for ID:", contactId);
           
-          // Ensure we have the selections object
+          
           window.contactSelections = window.contactSelections || {};
           
-          // Toggle selection state
+          
           window.contactSelections[contactId] = !window.contactSelections[contactId];
           
-          // Update UI
+          
           const listItem = document.getElementById(`contact-list-item-${contactId}`);
           const checkbox = document.getElementById(`contact-checkbox-${contactId}`);
           const checkboxIcon = document.getElementById(`contact-checkbox-icon-${contactId}`);
@@ -592,7 +592,7 @@
             }
           }
           
-          // Display selected contacts
+          
           const selectedContactsContainer = document.getElementById('contact-display-container');
           if (selectedContactsContainer && window.contactsArray) {
             let selectedContactsHTML = '';
@@ -614,7 +614,7 @@
             selectedContactsContainer.innerHTML = selectedContactsHTML;
           }
         };
-      }, 500); // Delay to ensure it overrides any other script
+      }, 500); 
     </script>
   </body>
 </html>

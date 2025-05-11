@@ -1,20 +1,20 @@
-// Ensure global objects exist
+
 window.contactSelections = window.contactSelections || {};
 
-// Replace the original toggleContactSelection with our version
+
 window.originalToggleContactSelection = window.toggleContactSelection;
 window.toggleContactSelection = function(contactId) {
   console.log("Custom toggleContactSelection called with ID:", contactId);
   
-  // Initialize if needed
+  
   if (typeof window.contactSelections[contactId] === 'undefined') {
     window.contactSelections[contactId] = false;
   }
   
-  // Toggle selection state
+  
   window.contactSelections[contactId] = !window.contactSelections[contactId]; 
   
-  // Update UI
+  
   const listItem = document.getElementById(`contact-list-item-${contactId}`);
   const checkbox = document.getElementById(`contact-checkbox-${contactId}`);
   const checkboxIcon = document.getElementById(`contact-checkbox-icon-${contactId}`);
@@ -31,15 +31,13 @@ window.toggleContactSelection = function(contactId) {
     }
   }
   
-  // Update the display of selected contacts
+  
   if (typeof updateSelectedContactsDisplay === 'function') {
     updateSelectedContactsDisplay();
   }
 };
 
-/**
- * Toggles the visibility of the contact selection panel
- */
+
 function toggleContactSelector() {
   console.log("Toggle contact selector called");
   
@@ -53,20 +51,20 @@ function toggleContactSelector() {
   contactSelectorPanel.classList.toggle('hidden');
   
   if (wasHidden) {
-    // Panel is now visible, so render the contact list
+    
     console.log("Contact panel opened, rendering list");
     
-    // Check if we have contacts
+    
     if ((!window.contactsArray || window.contactsArray.length === 0) && 
         typeof apiGet === 'function' && API_CONFIG) {
       
-      // Try to fetch contacts again if none are loaded
+      
       console.log("No contacts loaded, fetching from API");
       apiGet(API_CONFIG.ENDPOINTS.CONTACTS)
         .then(response => {
           console.log("Fetched contacts:", response);
           
-          // Process and store contacts
+          
           if (response && (Array.isArray(response) || typeof response === 'object')) {
             if (Array.isArray(response)) {
               window.contactsArray = response;
@@ -74,14 +72,14 @@ function toggleContactSelector() {
               window.contactsArray = Object.values(response);
             }
             
-            // Render with newly fetched contacts
+            
             renderContactList();
           }
         })
         .catch(error => {
           console.error("Error fetching contacts:", error);
           
-          // Fetch contacts directly from the API
+          
           console.log("Will try direct fetch of contacts");
           fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CONTACTS}`, {
             method: 'GET',
@@ -109,32 +107,30 @@ function toggleContactSelector() {
           })
           .catch(directError => {
             console.error("Direct fetch of contacts failed:", directError);
-            // Only then fall back to mockContacts, but don't save them to localStorage
+            
             window.contactsArray = [];
-            // In a real scenario, we would show an error to the user
+            
             renderContactList();
           });
           
-          // Render mock contacts
+          
           renderContactList();
         });
     }
     
-    // Always try to render what we have
+    
     renderContactList();
   }
 }
 
-// Expose function globally
+
 window.toggleContactSelector = toggleContactSelector;
 
-/**
- * Renders the contact list in the selection panel
- */
+
 function renderContactList() {
   console.log("Rendering contact list");
   
-  // Get contacts array and ensure it exists
+  
   const contactsArray = window.contactsArray || [];
   console.log("Contact array length:", contactsArray.length);
   
@@ -147,26 +143,26 @@ function renderContactList() {
   } else {
     console.log("Rendering contact list with:", contactsArray);
     
-    // Process each contact
+    
     contactsArray.forEach((contact) => {
-      // Make sure contact is a valid object
+      
       if (!contact || typeof contact !== 'object') {
         console.error("Invalid contact:", contact);
         return;
       }
       
-      // Ensure contact has an ID
+      
       const contactId = contact.id;
       if (!contactId) {
         console.error("Contact missing ID:", contact);
         return;
       }
       
-      // Ensure contact has a name
+      
       const contactName = contact.name || "Unnamed Contact";
       console.log(`Processing contact: ${contactName} (ID: ${contactId})`);
       
-      // Initialize selection state if needed
+      
       if (typeof window.contactSelections[contactId] === 'undefined') {
         window.contactSelections[contactId] = false;
       }
@@ -174,16 +170,16 @@ function renderContactList() {
       const isSelected = window.contactSelections[contactId];
       const selectedClass = isSelected ? 'contactItemSelected' : '';
       
-      // Generate avatar color
+      
       const avatarColor = contact.color || (typeof generateUserColor === 'function' ? 
                           generateUserColor(contactName) : '#2A3647');
       
-      // Generate initials
+      
       const initials = typeof getInitials === 'function' ? 
                       getInitials(contactName) : 
                       contactName.charAt(0).toUpperCase();
       
-      // Create HTML for this contact
+      
       contactsHTML += `
         <div id="contact-list-item-${contactId}" class="contactItem ${selectedClass}" onclick="toggleContactSelection(${contactId})">
           <div class="contactDisplay">
@@ -206,24 +202,21 @@ function renderContactList() {
   updateSelectedContactsDisplay();
 }
 
-/**
- * Toggles the selection state of a contact
- * @param {number} contactId - The ID of the contact to toggle
- */
+
 function toggleContactSelection(contactId) {
   console.log(`Toggling contact selection for ID: ${contactId}`);
   
-  // Initialize if needed
+  
   if (typeof window.contactSelections[contactId] === 'undefined') {
     window.contactSelections[contactId] = false;
   }
   
-  // Toggle selection state
+  
   window.contactSelections[contactId] = !window.contactSelections[contactId];
   
   console.log(`Contact ${contactId} selection state: ${window.contactSelections[contactId]}`);
   
-  // Update UI
+  
   const listItem = document.getElementById(`contact-list-item-${contactId}`);
   const checkbox = document.getElementById(`contact-checkbox-${contactId}`);
   const checkboxIcon = document.getElementById(`contact-checkbox-icon-${contactId}`);
@@ -242,16 +235,14 @@ function toggleContactSelection(contactId) {
     console.error(`UI elements not found for contact ${contactId}`);
   }
   
-  // Update the display of selected contacts
+  
   updateSelectedContactsDisplay();
 }
 
-// Expose function globally
+
 window.toggleContactSelection = toggleContactSelection;
 
-/**
- * Updates the UI to display selected contacts
- */
+
 function updateSelectedContactsDisplay() {
   const selectedContactsContainer = document.getElementById('contact-display-container');
   if (!selectedContactsContainer) {
@@ -265,7 +256,7 @@ function updateSelectedContactsDisplay() {
   console.log("Contacts array:", contactsArray);
   console.log("Selections:", window.contactSelections);
   
-  // Get all selected contacts
+  
   const selectedContacts = contactsArray.filter(contact => {
     if (!contact || !contact.id) return false;
     
@@ -281,14 +272,14 @@ function updateSelectedContactsDisplay() {
   let selectedContactsHTML = '';
   
   selectedContacts.forEach(contact => {
-    // Ensure contact has a name
+    
     const contactName = contact.name || "Unnamed Contact";
     
-    // Generate avatar color
+    
     const avatarColor = contact.color || (typeof generateUserColor === 'function' ? 
                         generateUserColor(contactName) : '#2A3647');
     
-    // Generate initials
+    
     const initials = typeof getInitials === 'function' ? 
                     getInitials(contactName) : 
                     contactName.charAt(0).toUpperCase();
@@ -306,18 +297,16 @@ function updateSelectedContactsDisplay() {
   selectedContactsContainer.innerHTML = selectedContactsHTML;
 }
 
-// Expose these functions globally
+
 window.updateSelectedContactsDisplay = updateSelectedContactsDisplay;
 window.renderContactList = renderContactList;
 
-/**
- * Clears all contact selections
- */
+
 function clearContactSelections() {
-  // Reset all selections
+  
   window.contactSelections = {};
   
-  // Update UI
+  
   const contactSelectorPanel = document.getElementById('contact-selector-panel');
   const selectedContactsContainer = document.getElementById('contact-display-container');
   

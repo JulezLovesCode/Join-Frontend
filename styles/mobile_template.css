@@ -1,4 +1,4 @@
-/* Responsive Contact Form Modifications */
+
 @media (max-width: 1120px) {
   .createContactBtn {
     display: none;
@@ -127,7 +127,7 @@
   }
 }
 
-/* Mobile Navigation Bar */
+
 .mobileNavigation {
   background-color: #2a3647;
   width: 100%;
@@ -177,7 +177,7 @@
   vertical-align: middle;
 }
 
-/* Responsive Layout Adjustments */
+
 @media (max-width: 1050px) {
   .mainNavigation {
     display: none;

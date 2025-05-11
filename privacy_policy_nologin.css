@@ -1,4 +1,4 @@
-/* Base Typography & Layout */
+
 html {
   box-sizing: border-box;
 }
@@ -22,7 +22,7 @@ body {
   font-size: 20px;
 }
 
-/* Document Container Styling */
+
 .legalDocument {
   margin: 80px 100px 32px 300px;
   position: sticky;
@@ -51,7 +51,7 @@ body {
   flex-direction: column;
 }
 
-/* Top Navigation Bar */
+
 .appHeader {
   position: sticky;
   top: 0;
@@ -88,7 +88,7 @@ body {
   cursor: pointer;
 }
 
-/* User Profile Elements */
+
 .userIdentifier {
   height: 50px;
   width: 50px;
@@ -134,7 +134,7 @@ body {
   background-color: #2a3d59;
 }
 
-/* Main Navigation Panel */
+
 .navigationPanel {
   background-color: #2a3647;
   position: fixed;
@@ -216,7 +216,7 @@ body {
   background-color: #091931;
 }
 
-/* Responsive Behavior - Tablets */
+
 @media (max-width: 1050px) {
   .appHeader {
     padding: 20px 40px 20px 40px;
@@ -277,7 +277,7 @@ body {
   }
 }
 
-/* Responsive Behavior - Mobile */
+
 @media (max-width: 600px) {
   .navItemLink {
     font-size: 12px;

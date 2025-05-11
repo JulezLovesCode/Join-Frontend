@@ -1,11 +1,6 @@
-/**
- * Error Handling Module
- * 
- * Provides centralized error handling functionality for the application.
- * Use this module to handle errors consistently across the application.
- */
 
-// Error types
+
+
 const ERROR_TYPES = {
   NETWORK: 'network_error',
   AUTH: 'authentication_error',
@@ -15,18 +10,14 @@ const ERROR_TYPES = {
   UNKNOWN: 'unknown_error'
 };
 
-/**
- * Determines the type of error based on status code or error object
- * @param {Error|Object} error - The error object
- * @returns {string} - The error type from ERROR_TYPES
- */
+
 function categorizeError(error) {
-  // Network errors (offline, CORS, etc.)
+  
   if (error.name === 'TypeError' || error.status === 0) {
     return ERROR_TYPES.NETWORK;
   }
   
-  // Handle specific HTTP status codes
+  
   if (error.status) {
     switch (true) {
       case error.status === 401 || error.status === 403:
@@ -45,12 +36,7 @@ function categorizeError(error) {
   return ERROR_TYPES.UNKNOWN;
 }
 
-/**
- * Gets user-friendly error message based on error type and details
- * @param {string} errorType - The type of error from ERROR_TYPES
- * @param {Error|Object} error - The original error object
- * @returns {string} - User-friendly error message
- */
+
 function getUserFriendlyMessage(errorType, error) {
   switch (errorType) {
     case ERROR_TYPES.NETWORK:
@@ -60,7 +46,7 @@ function getUserFriendlyMessage(errorType, error) {
       return 'Your session has expired or you do not have permission. Please log in again.';
     
     case ERROR_TYPES.VALIDATION:
-      // Try to extract validation errors if available
+      
       if (error.details && typeof error.details === 'object') {
         const messages = [];
         for (const key in error.details) {
@@ -88,23 +74,18 @@ function getUserFriendlyMessage(errorType, error) {
   }
 }
 
-/**
- * Handles API errors consistently
- * @param {Error|Object} error - The error that occurred
- * @param {Function} [callback] - Optional callback to handle the error
- * @returns {Object} - Error information object
- */
+
 function handleApiError(error, callback) {
-  // Determine error type
+  
   const errorType = categorizeError(error);
   
-  // Get user-friendly message
+  
   const message = getUserFriendlyMessage(errorType, error);
   
-  // Log error to console with details
+  
   console.error(`API Error (${errorType}):`, error);
   
-  // Build error information object
+  
   const errorInfo = {
     type: errorType,
     message,
@@ -112,15 +93,15 @@ function handleApiError(error, callback) {
     timestamp: new Date().toISOString()
   };
   
-  // Special handling for authentication errors
+  
   if (errorType === ERROR_TYPES.AUTH) {
-    // Clear authentication if it's an auth error
+    
     if (typeof clearAuthentication === 'function') {
       clearAuthentication();
     }
   }
   
-  // Execute callback if provided
+  
   if (typeof callback === 'function') {
     callback(errorInfo);
   }
@@ -128,13 +109,9 @@ function handleApiError(error, callback) {
   return errorInfo;
 }
 
-/**
- * Shows an error notification to the user
- * @param {string} message - The error message to display
- * @param {number} [duration=5000] - How long to show the notification (ms)
- */
+
 function showErrorNotification(message, duration = 5000) {
-  // Look for existing notification container or create one
+  
   let container = document.getElementById('error-notification-container');
   
   if (!container) {
@@ -147,7 +124,7 @@ function showErrorNotification(message, duration = 5000) {
     document.body.appendChild(container);
   }
   
-  // Create notification element
+  
   const notification = document.createElement('div');
   notification.className = 'error-notification';
   notification.style.backgroundColor = '#FF3D00';
@@ -161,12 +138,12 @@ function showErrorNotification(message, duration = 5000) {
   notification.style.alignItems = 'center';
   notification.style.maxWidth = '400px';
   
-  // Add message
+  
   const messageSpan = document.createElement('span');
   messageSpan.textContent = message;
   notification.appendChild(messageSpan);
   
-  // Add close button
+  
   const closeButton = document.createElement('button');
   closeButton.textContent = '×';
   closeButton.style.background = 'none';
@@ -181,10 +158,10 @@ function showErrorNotification(message, duration = 5000) {
   };
   notification.appendChild(closeButton);
   
-  // Add to container
+  
   container.appendChild(notification);
   
-  // Auto-remove after duration
+  
   setTimeout(() => {
     notification.remove();
   }, duration);
@@ -192,14 +169,9 @@ function showErrorNotification(message, duration = 5000) {
   return notification;
 }
 
-/**
- * Display fallback data when API fails
- * @param {string} errorType - The type of error from ERROR_TYPES
- * @param {Function} fallbackDataProvider - Function that returns fallback data
- * @returns {any} - The fallback data
- */
+
 function useFallbackData(errorType, fallbackDataProvider) {
-  // Only use fallback for certain error types
+  
   if ([ERROR_TYPES.NETWORK, ERROR_TYPES.SERVER, ERROR_TYPES.NOT_FOUND].includes(errorType) && 
       typeof fallbackDataProvider === 'function') {
     
@@ -211,7 +183,7 @@ function useFallbackData(errorType, fallbackDataProvider) {
   return null;
 }
 
-// Export error handling functions for use in other modules
+
 window.handleApiError = handleApiError;
 window.showErrorNotification = showErrorNotification;
 window.useFallbackData = useFallbackData;

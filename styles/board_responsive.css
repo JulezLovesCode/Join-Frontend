@@ -79,7 +79,7 @@
   display: none !important;
 }
 
-/* Additional utility classes */
+
 .px32 {
   width: 32px !important;
   height: 32px !important;
@@ -109,7 +109,7 @@
   pointer-events: none;
 }
 
-/* Button styles */
+
 .button-dark {
   display: flex;
   align-items: center;
@@ -136,7 +136,7 @@
   padding-left: 4px;
 }
 
-/* Media queries for responsive design */
+
 @media (max-width: 1450px) {
   .boardContent {
     margin-left: 300px;

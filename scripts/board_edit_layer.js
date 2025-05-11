@@ -1,7 +1,4 @@
-/**
- * Opens the task editor interface for a specific task
- * @param {string} taskId - Unique identifier of the task to edit
- */
+
 window.openTaskEditor = async function (taskId) {
   await refreshTaskData(taskId);
 
@@ -16,10 +13,7 @@ window.openTaskEditor = async function (taskId) {
   editorContainer.innerHTML = buildTaskEditorInterface(taskData, taskId);
 };
 
-/**
- * Fetches the latest data for a specific task from the server
- * @param {string} taskId - Unique identifier of the task
- */
+
 async function refreshTaskData(taskId) {
   try {
     const authToken = localStorage.getItem('access_token');
@@ -46,7 +40,7 @@ async function refreshTaskData(taskId) {
 
     const latestTaskData = await response.json();
 
-    // Only update if data has changed
+    
     if (JSON.stringify(tasksData[taskId]) === JSON.stringify(latestTaskData)) {
       return;
     }
@@ -61,18 +55,14 @@ async function refreshTaskData(taskId) {
   }
 }
 
-/**
- * Updates a task with new data via API
- * @param {string} taskId - Unique identifier of the task
- * @param {object} updatedTaskData - Object containing the updated task properties
- */
+
 async function persistTaskChanges(taskId, updatedTaskData) {
   try {
     if (
       !updatedTaskData.contact_ids ||
       updatedTaskData.contact_ids.length === 0
     ) {
-      // Empty contact list - using existing data if available
+      
     }
 
     const response = await executeApiRequest(
@@ -89,27 +79,24 @@ async function persistTaskChanges(taskId, updatedTaskData) {
   }
 }
 
-/**
- * Collects form data and saves all changes to the task
- * @param {string} taskId - Unique identifier of the task
- */
+
 async function saveAllTaskChanges(taskId) {
   try {
-    // Get selected contact IDs
+    
     let participantIds = getParticipantIds();
 
-    // Use existing contact IDs if none selected
+    
     if (!Array.isArray(participantIds) || participantIds.length === 0) {
       participantIds = currentTask.contact_ids || [];
     }
 
-    // Prepare updated task data
+    
     const taskUpdates = collectTaskFormData(
       participantIds,
       collectSubtaskData()
     );
 
-    // Persist changes and refresh UI
+    
     await persistTaskChanges(taskId, taskUpdates);
     openTaskEditor(taskId);
   } catch (error) {
@@ -117,10 +104,7 @@ async function saveAllTaskChanges(taskId) {
   }
 }
 
-/**
- * Updates only the contact assignments for a task
- * @param {string} taskId - Unique identifier of the task
- */
+
 async function updateTaskParticipants(taskId) {
   try {
     const participantIds = getParticipantIds();
@@ -140,10 +124,7 @@ async function updateTaskParticipants(taskId) {
   }
 }
 
-/**
- * Extracts IDs of all selected contacts from the form
- * @returns {Array} Array of selected contact IDs
- */
+
 function getParticipantIds() {
   const selectedIds = [];
 
@@ -156,10 +137,7 @@ function getParticipantIds() {
   return selectedIds;
 }
 
-/**
- * Transforms the subtasks array into a properly formatted object
- * @returns {Object} Formatted subtasks object
- */
+
 function collectSubtaskData() {
   return subtasks.reduce((result, subtask, index) => {
     result[`subtask${index + 1}`] = {
@@ -170,14 +148,9 @@ function collectSubtaskData() {
   }, {});
 }
 
-/**
- * Collects all task data from the editor form
- * @param {Array} participantIds - Array of contact IDs to assign to the task
- * @param {Object} subtasksData - Formatted subtask data
- * @returns {Object} Complete task data object
- */
+
 function collectTaskFormData(participantIds, subtasksData) {
-  // Ensure we have valid contact IDs
+  
   if (!participantIds || participantIds.length === 0) {
     participantIds = currentTask.contact_ids || [];
   }
@@ -194,10 +167,7 @@ function collectTaskFormData(participantIds, subtasksData) {
   };
 }
 
-/**
- * Determines which priority is currently selected in the form
- * @returns {string} Priority level: "urgent", "medium", or "low"
- */
+
 function determineSelectedPriority() {
   if (document.querySelector('.priority-button.priority-high-active')) {
     return 'urgent';
@@ -212,21 +182,14 @@ function determineSelectedPriority() {
   }
 }
 
-/**
- * Completes the task update process and refreshes the UI
- */
+
 function completeTaskUpdate() {
   closeTaskEditor();
   initializeBoard();
   subtasks = [];
 }
 
-/**
- * Builds the complete task editor interface
- * @param {Object} taskData - The task data to edit
- * @param {string} taskId - Unique identifier of the task
- * @returns {string} HTML markup for the task editor
- */
+
 function buildTaskEditorInterface(taskData, taskId) {
   currentTask = taskData;
 
@@ -238,7 +201,7 @@ function buildTaskEditorInterface(taskData, taskId) {
   const participantListHtml = renderParticipantsList(contacts);
   const subtaskListHtml = renderSubtasksList(taskSubtasks);
 
-  // Priority button states
+  
   const priorityConfig = {
     high: {
       activeClass: taskData.priority === 'urgent' ? 'priority-high-active' : '',
@@ -278,11 +241,7 @@ function buildTaskEditorInterface(taskData, taskId) {
   );
 }
 
-/**
- * Renders the HTML for task subtasks and updates the global subtasks array
- * @param {Object} taskSubtasks - Object containing task subtasks
- * @returns {string} HTML markup for subtasks list
- */
+
 function renderSubtasksList(taskSubtasks) {
   subtasks = [];
 
@@ -298,11 +257,7 @@ function renderSubtasksList(taskSubtasks) {
     .join('');
 }
 
-/**
- * Renders the HTML for task participants (contacts)
- * @param {Object} contacts - Object containing task contacts
- * @returns {string} HTML markup for contacts list
- */
+
 function renderParticipantsList(contacts) {
   contacts = contacts || {};
   const contactCount = Object.keys(contacts).length;
@@ -313,11 +268,7 @@ function renderParticipantsList(contacts) {
   return participantsHtml;
 }
 
-/**
- * Renders the HTML for the first four visible participants
- * @param {Object} contacts - Object containing task contacts
- * @returns {string} HTML markup for visible participants
- */
+
 function renderVisibleParticipants(contacts) {
   let participantsHtml = '';
   let displayedCount = 0;
@@ -337,11 +288,7 @@ function renderVisibleParticipants(contacts) {
   return participantsHtml;
 }
 
-/**
- * Renders the HTML for the "remaining participants" counter
- * @param {number} totalCount - Total number of participants
- * @returns {string} HTML markup for the counter
- */
+
 function renderParticipantCounter(totalCount) {
   if (totalCount <= 4) {
     return '';

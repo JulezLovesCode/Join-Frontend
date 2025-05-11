@@ -1,9 +1,6 @@
-/**
- * Board Module
- * Manages the Kanban board interface for tasks
- */
 
-// Constants
+
+
 const BOARD_CATEGORIES = {
   TODO: "to-do",
   IN_PROGRESS: "in-progress",
@@ -11,23 +8,21 @@ const BOARD_CATEGORIES = {
   DONE: "done"
 };
 
-// State variables
+
 let selectedBoardCategory = sessionStorage.getItem("selectedBoardCategory") || BOARD_CATEGORIES.TODO;
 let tasksData = {};
 let tasksArray = [];
 let tasksKeys = [];
-let contactsArray = []; // Contact list for task assignments
-let boardContactSelections = {}; // Tracks selected contacts (renamed to avoid conflicts)
+let contactsArray = []; 
+let boardContactSelections = {}; 
 let currentTask = {};
 let currentDraggedTaskKey = null;
 let currentDraggedTaskId = null;
 let isDataLoading = false;
 let hasLoadError = false;
 
-/**
- * Fallback implementations in case the external functions aren't loaded
- */
-// Fallback for isAuthenticated
+
+
 if (typeof isAuthenticated !== 'function') {
   window.isAuthenticated = function() {
     return !!localStorage.getItem('token');
@@ -35,7 +30,7 @@ if (typeof isAuthenticated !== 'function') {
   console.warn("Using fallback isAuthenticated function");
 }
 
-// Fallback for showErrorNotification
+
 if (typeof showErrorNotification !== 'function') {
   window.showErrorNotification = function(message) {
     console.error("Error notification:", message);
@@ -44,7 +39,7 @@ if (typeof showErrorNotification !== 'function') {
   console.warn("Using fallback showErrorNotification function");
 }
 
-// Fallback for handleApiError
+
 if (typeof handleApiError !== 'function') {
   window.handleApiError = function(error) {
     console.error("API Error:", error);
@@ -58,7 +53,7 @@ if (typeof handleApiError !== 'function') {
   console.warn("Using fallback handleApiError function");
 }
 
-// Fallback for ERROR_TYPES
+
 if (typeof ERROR_TYPES === 'undefined') {
   window.ERROR_TYPES = {
     NETWORK: 'network_error',
@@ -71,7 +66,7 @@ if (typeof ERROR_TYPES === 'undefined') {
   console.warn("Using fallback ERROR_TYPES");
 }
 
-// Fallback for API_CONFIG
+
 if (typeof API_CONFIG === 'undefined') {
   window.API_CONFIG = {
     BASE_URL: 'http://127.0.0.1:8000/',
@@ -89,7 +84,7 @@ if (typeof API_CONFIG === 'undefined') {
   console.warn("Using fallback API_CONFIG");
 }
 
-// Fallback for apiGet
+
 if (typeof apiGet !== 'function') {
   window.apiGet = async function(endpoint) {
     try {
@@ -118,7 +113,7 @@ if (typeof apiGet !== 'function') {
   console.warn("Using fallback apiGet function");
 }
 
-// Fallback for apiPatch
+
 if (typeof apiPatch !== 'function') {
   window.apiPatch = async function(endpoint, data) {
     try {
@@ -151,7 +146,7 @@ if (typeof apiPatch !== 'function') {
   console.warn("Using fallback apiPatch function");
 }
 
-// Fallback for apiDelete
+
 if (typeof apiDelete !== 'function') {
   window.apiDelete = async function(endpoint) {
     try {
@@ -180,25 +175,23 @@ if (typeof apiDelete !== 'function') {
   console.warn("Using fallback apiDelete function");
 }
 
-/**
- * Initializes board.html (implemented on body onload)
- */
+
 async function boardInit() {
   showLoadingIndicator();
   
   try {
-    // Load all required data
+    
     await Promise.all([
       fetchContacts(),
       fetchTasks()
     ]);
     
-    // Render the board with loaded data
+    
     createTaskOnBoard();
     checkAndAddNoTask();
     generateInitials();
     
-    // Add event listeners after render
+    
     setTimeout(() => {
       addContactClickListeners();
     }, 500);
@@ -208,7 +201,7 @@ async function boardInit() {
     console.error("Error initializing board:", error);
     hideLoadingIndicator();
     
-    // Use function if available, otherwise fallback to console
+    
     if (typeof showErrorNotification === 'function') {
       showErrorNotification("There was an error loading the board. Some features may not work correctly.");
     } else {
@@ -218,13 +211,11 @@ async function boardInit() {
   }
 }
 
-/**
- * Shows loading indicator during data fetch
- */
+
 function showLoadingIndicator() {
   isDataLoading = true;
   
-  // Create loading UI if needed
+  
   let loadingElement = document.getElementById('board-loading');
   if (!loadingElement) {
     loadingElement = document.createElement('div');
@@ -235,7 +226,7 @@ function showLoadingIndicator() {
       <p>Loading tasks...</p>
     `;
     
-    // Add some basic inline styles
+    
     loadingElement.style.position = 'fixed';
     loadingElement.style.top = '50%';
     loadingElement.style.left = '50%';
@@ -253,9 +244,7 @@ function showLoadingIndicator() {
   loadingElement.style.display = 'block';
 }
 
-/**
- * Hides loading indicator after data fetch
- */
+
 function hideLoadingIndicator() {
   isDataLoading = false;
   
@@ -265,16 +254,14 @@ function hideLoadingIndicator() {
   }
 }
 
-/**
- * Fetches contacts from API or initializes with mock data
- */
+
 async function fetchContacts() {
-  // Check for auth failures before making the request
+  
   if (sessionStorage.getItem('auth_failed') === 'true' || !isAuthenticated()) {
     console.log("Authentication previously failed or no token, using mock contacts");
     contactsArray = getMockContacts();
     
-    // Initialize boardContactSelections
+    
     contactsArray.forEach((contact, index) => {
       boardContactSelections[index] = false;
     });
@@ -283,7 +270,7 @@ async function fetchContacts() {
   }
   
   try {
-    // Try to get contacts from the API
+    
     const response = await apiGet(API_CONFIG.ENDPOINTS.CONTACTS);
     
     if (response && Array.isArray(response)) {
@@ -294,15 +281,15 @@ async function fetchContacts() {
       throw new Error("Invalid contacts data format");
     }
   } catch (error) {
-    // Log error and fall back to mock contacts
+    
     const errorInfo = handleApiError(error);
     console.log("Using mock contacts due to API error:", errorInfo.type);
     
-    // Initialize with mock data
+    
     contactsArray = getMockContacts();
   }
   
-  // Initialize boardContactSelections
+  
   contactsArray.forEach((contact, index) => {
     boardContactSelections[index] = false;
   });
@@ -310,11 +297,9 @@ async function fetchContacts() {
   return contactsArray;
 }
 
-/**
- * Fetches tasks from API or uses mock data as fallback
- */
+
 async function fetchTasks() {
-  // Check for auth failures before making the request
+  
   if (sessionStorage.getItem('auth_failed') === 'true' || !isAuthenticated()) {
     console.log("Authentication previously failed or no token, using mock tasks");
     useAndProcessMockTasks();
@@ -322,24 +307,24 @@ async function fetchTasks() {
   }
   
   try {
-    // Try to fetch tasks from API
+    
     const response = await apiGet(API_CONFIG.ENDPOINTS.TASKS);
     
-    // Check if response is valid
+    
     if (!response) {
       throw new Error("No data received from API");
     }
     
-    // Process response data
+    
     tasksData = response;
     tasksArray = Array.isArray(response) ? response : Object.values(response);
     tasksKeys = Object.keys(tasksData);
     
   } catch (error) {
-    // Handle error and use mock data
+    
     const errorInfo = handleApiError(error);
     
-    // Show an error message if appropriate
+    
     if (errorInfo.type === ERROR_TYPES.AUTH) {
       showErrorNotification("Your session has expired. Using sample tasks for demonstration.");
     } else if (errorInfo.type === ERROR_TYPES.NETWORK) {
@@ -350,9 +335,7 @@ async function fetchTasks() {
   }
 }
 
-/**
- * Helper function to use and process mock tasks data
- */
+
 function useAndProcessMockTasks() {
   tasksArray = getMockTasks();
   tasksData = tasksArray.reduce((obj, task, index) => {
@@ -362,12 +345,9 @@ function useAndProcessMockTasks() {
   tasksKeys = Object.keys(tasksData);
 }
 
-/**
- * Provides mock contacts for testing when API is unavailable
- * @returns {Array} Array of mock contact objects
- */
+
 function getMockContacts() {
-  // Try to get user-created contacts from localStorage
+  
   const mockContactsJson = localStorage.getItem('mockContacts');
   if (mockContactsJson) {
     try {
@@ -381,54 +361,46 @@ function getMockContacts() {
     }
   }
   
-  // Default contacts if none exist in localStorage
+  
   const defaultContacts = [
     { id: 1, name: "Martina Bohm", email: "martina@example.com", color: "#FF7A00" },
     { id: 2, name: "Sas Sas", email: "sas@example.com", color: "#FF5EB3" },
     { id: 3, name: "Tobias Mal", email: "tobias@example.com", color: "#6E52FF" }
   ];
   
-  // Save these to localStorage for future use
+  
   localStorage.setItem('mockContacts', JSON.stringify(defaultContacts));
   
   return defaultContacts;
 }
 
-/**
- * Sets up click listeners for contact avatars
- */
+
 function addContactClickListeners() {
   const contacts = document.querySelectorAll(".task-on-board-contact");
   
   contacts.forEach(contact => {
-    // Remove existing listeners to avoid duplicates
+    
     contact.removeEventListener("click", toggleContactSelection);
-    // Add fresh listener
+    
     contact.addEventListener("click", toggleContactSelection);
   });
 }
 
-/**
- * Toggle contact selection state
- * @param {Event} event - Click event
- */
+
 function toggleContactSelection(event) {
-  // Prevent event from bubbling to parent elements if event is provided
+  
   if (event && typeof event.stopPropagation === 'function') {
     event.stopPropagation();
   }
-  // Toggle selection class if this exists
+  
   if (this && typeof this.classList !== 'undefined') {
     this.classList.toggle("selected-contact");
   }
 }
 
-/**
- * Creates mock task data for testing when API fails
- * Uses localStorage to persist deleted tasks between sessions
- */
+
 function getMockTasks() {
-  // Default mock tasks
+  
   const defaultMockTasks = [
     {
       id: 1,
@@ -476,7 +448,7 @@ function getMockTasks() {
     }
   ];
 
-  // Check if we have saved mock tasks in localStorage
+  
   try {
     const savedMockTasks = localStorage.getItem('mockTasks');
     if (savedMockTasks) {
@@ -484,18 +456,16 @@ function getMockTasks() {
     }
   } catch (error) {
     console.error("Error retrieving mock tasks from localStorage:", error);
-    // Reset the mock tasks storage if corrupt
+    
     localStorage.removeItem('mockTasks');
   }
 
-  // If no saved tasks or error occurred, initialize with default tasks
+  
   localStorage.setItem('mockTasks', JSON.stringify(defaultMockTasks));
   return defaultMockTasks;
 }
 
-/**
- * This function renders the task cards in board.html. First it defines all board IDs for the different categories. Then it clears all Boards and renders the cards.
- */
+
 function createTaskOnBoard() {
   console.log("Creating tasks on board with data:", tasksArray);
   
@@ -522,13 +492,7 @@ function createTaskOnBoard() {
   });
 }
 
-/**
- * Helper function to make authenticated API requests
- * @param {string} url - The API endpoint URL
- * @param {string} method - HTTP method (GET, POST, PATCH, etc.)
- * @param {Object} data - Data to send (for POST, PATCH, etc.)
- * @returns {Promise<any>} The parsed response data
- */
+
 async function fetchWithAuth(url, method = 'GET', data = null) {
   const token = localStorage.getItem('token');
   const headers = {
@@ -561,9 +525,7 @@ async function fetchWithAuth(url, method = 'GET', data = null) {
   return await response.json();
 }
 
-/**
- * This function works by using the input field "Find Task". It is implemented by an oninput-handler in the HTML.
- */
+
 function searchTasks() {
   let input = document.getElementById("search-input").value.toLowerCase();
   let filteredTasks = tasksArray.filter((task) => {
@@ -572,9 +534,7 @@ function searchTasks() {
   renderFilteredTasks(filteredTasks);
 }
 
-/**
- * Same function as findTask() but implemented on another div shown on mobile devices.
- */
+
 function searchTasksMobile() {
   let input = document.getElementById("find-task2").value.toLowerCase();
   let filteredTasks = tasksArray.filter((task) => {
@@ -583,10 +543,7 @@ function searchTasksMobile() {
   renderFilteredTasks(filteredTasks);
 }
 
-/**
- * Same functionality as createTaskOnBoard, but for the filtered tasks by the findTask-function.
- * @param {array} filteredTasks - filtered tasks by oninput-handler in findTask().
- */
+
 function renderFilteredTasks(filteredTasks) {
   const boardIds = { "to-do": "to-do", "in-progress": "in-progress", "await-feedback": "await-feedback", done: "done" };
   clearBoards(boardIds);
@@ -608,10 +565,7 @@ function renderFilteredTasks(filteredTasks) {
   checkAndAddNoTask();
 }
 
-/**
- * This function empties all category boards before they are rendert again in other functions.
- * @param {array} boardIds - board categories to-do, in-progress, await-feedback and done
- */
+
 function clearBoards(boardIds) {
   for (let id in boardIds) {
     let content = document.getElementById(boardIds[id]);
@@ -621,11 +575,7 @@ function clearBoards(boardIds) {
   }
 }
 
-/**
- * This function displays the assigned contacts on the cards on the board by initials.
- * @param {array} contacts - task.contacts
- * @returns HTMLs of the first four assigned contacts and the HTML with the number of the further contacts, if there are more.
- */
+
 function generateContactsHTML(contacts) {
   contacts = contacts || {};
   const contactCount = Object.keys(contacts).length;
@@ -635,11 +585,7 @@ function generateContactsHTML(contacts) {
   return displayedContacts + remainingContacts;
 }
 
-/**
- * This function renders the first four assigned task contacts on the card on the board.
- * @param {array} contacts - task.contacts
- * @returns HTMLs of the first four assigned contacts
- */
+
 function getDisplayedContactsHTML(contacts) {
   let contactsHTML = "";
   let displayedContacts = 0;
@@ -657,11 +603,7 @@ function getDisplayedContactsHTML(contacts) {
   return contactsHTML;
 }
 
-/**
- * Generates HTML for a single contact avatar
- * @param {Object} contact - The contact object with name
- * @returns {string} HTML markup for the contact avatar
- */
+
 function generateContact(contact) {
   if (!contact || !contact.name) return '';
   
@@ -671,21 +613,17 @@ function generateContact(contact) {
   return `<div class="task-on-board-contact" style="background-color: ${color};">${initials}</div>`;
 }
 
-/**
- * Generates a consistent color for a contact based on their name
- * @param {string} name - Contact name
- * @returns {string} CSS color string
- */
+
 function generateColorForContact(name) {
   if (!name) return '#2A3647';
   
-  // Simple hash function for consistent colors
+  
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
   
-  // Use predefined colors for consistency
+  
   const colors = [
     '#FF7A00', '#FF5EB3', '#6E52FF', '#9327FF', 
     '#00BEE8', '#1FD7C1', '#FF745E', '#FFA35E',
@@ -696,11 +634,7 @@ function generateColorForContact(name) {
   return colors[index];
 }
 
-/**
- * Generates HTML for the "more contacts" indicator
- * @param {number} contactCount - Total number of contacts
- * @returns {string} HTML for remaining contacts indicator
- */
+
 function getRemainingContactsHTML(contactCount) {
   if (contactCount > 4) {
     const remainingContacts = contactCount - 4;
@@ -709,11 +643,7 @@ function getRemainingContactsHTML(contactCount) {
   return "";
 }
 
-/**
- * This function displays the correct image for each prio status on the cards on the board
- * @param {string} prio - task.prio
- * @returns the correct image correspondant to urgent, medium or low
- */
+
 function handlePrio(priority) {
   if (priority === "urgent") {
     return "../assets/images/high.svg";
@@ -726,16 +656,7 @@ function handlePrio(priority) {
   }
 }
 
-/**
- * This function defines and calculates the variables needed for showing the subtask status on the cards on the board and then returns the card HTMLs.
- * @param {string} key - task key
- * @param {string} categoryClass - task.task_category
- * @param {string} task
- * @param {number} i
- * @param {string} contactsHTML - contact initials in the task cards
- * @param {string} prioSrc - source of the image used for prio status
- * @returns the HTML of the task cards
- */
+
 function generateTaskOnBoardHTML(key, taskId, categoryClass, task, contactsHTML, prioSrc) {
   let subtasks = task.subtasks || {};
   let totalSubtasks = Object.keys(subtasks).length;
@@ -765,11 +686,7 @@ function generateTaskOnBoardHTML(key, taskId, categoryClass, task, contactsHTML,
   `;
 }
 
-/**
- * This function separates the first and the last name, then returns the initials as big letters.
- * @param {string} name - contact.name
- * @returns initials
- */
+
 function getInitials(name) {
   if (!name) return "";
   
@@ -780,9 +697,7 @@ function getInitials(name) {
   return initials.toUpperCase();
 }
 
-/**
- * Generate user initials for profile
- */
+
 function generateInitials() {
   const userProfile = document.getElementById('user-profile');
   if (!userProfile) return;
@@ -794,9 +709,7 @@ function generateInitials() {
   userProfile.style.backgroundColor = generateColorForContact(userName);
 }
 
-/**
- * This function adds a div with "No task in this category", if it is empty.
- */
+
 function checkAndAddNoTask() {
   const taskAreas = ["to-do", "in-progress", "await-feedback", "done"];
 
@@ -811,10 +724,7 @@ function checkAndAddNoTask() {
   });
 }
 
-/**
- * This function starts the dragging activity on tasks on the board.
- * @param {string} taskId - task id
- */
+
 function startDragging(taskId) {
   if (!taskId || taskId === 0) {
     console.error("Error: Task ID is invalid!", taskId);
@@ -823,28 +733,18 @@ function startDragging(taskId) {
   currentDraggedTaskKey = taskId;
 }
 
-/**
- * Allows dropping by preventing default behavior
- * @param {Event} ev - The dragover event
- */
+
 function allowDrop(ev) {
   ev.preventDefault();
-  // Removed hover effect for cleaner UI
+  
 }
 
-/**
- * This function removes any styling added during dragging.
- * @param {event} ev
- */
+
 function resetBackground(ev) {
-  // No styling to reset - removed hover effect for cleaner UI
+  
 }
 
-/**
- * Handles dropping a task on a board column
- * @param {Event} event - The drop event
- * @param {string} category - The target category
- */
+
 function drop(event, category) {
   event.preventDefault();
   
@@ -855,52 +755,48 @@ function drop(event, category) {
   moveTo(category, currentDraggedTaskKey);
 }
 
-/**
- * Updates a task's category on the server
- * @param {string} category - The new category
- * @param {string} taskId - The task ID
- */
+
 async function moveTo(category, taskId) {
   if (!taskId || taskId === 0) {
     console.error("Error: Task ID is invalid!", taskId);
     return;
   }
 
-  // Optimize UI update - update locally first for better UX
+  
   const taskToUpdate = tasksArray.find(t => t.id == taskId);
   if (taskToUpdate) {
     const oldCategory = taskToUpdate.board_category;
     taskToUpdate.board_category = category.toLowerCase();
     
-    // Re-render to show immediate feedback
+    
     createTaskOnBoard();
     
-    // Check if using mock data
+    
     if (sessionStorage.getItem('auth_failed') === 'true' || !isAuthenticated()) {
       console.log("Using mock data, updating localStorage");
       
-      // Save updated tasks to localStorage for persistence between page loads
+      
       localStorage.setItem('mockTasks', JSON.stringify(tasksArray));
       
-      return; // Skip server update in mock mode
+      return; 
     }
     
     try {
-      // Send update to server
+      
       await apiPatch(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`, {
         board_category: category.toLowerCase()
       });
       
-      // Refresh data from server to ensure consistency
+      
       await fetchTasks();
       createTaskOnBoard();
       checkAndAddNoTask();
     } catch (error) {
-      // If it fails, revert the change locally
+      
       handleApiError(error, () => {
         showErrorNotification("Failed to update task. Please try again.");
         
-        // Revert to original category
+        
         if (taskToUpdate) {
           taskToUpdate.board_category = oldCategory;
           createTaskOnBoard();
@@ -912,10 +808,7 @@ async function moveTo(category, taskId) {
   }
 }
 
-/**
- * Opens a task to view or edit details
- * @param {string} taskId - The task ID to open
- */
+
 function openTask(taskId) {
   if (taskId === undefined || taskId === null) {
     console.error("Error: taskId is undefined or null!");
@@ -974,7 +867,7 @@ function openTask(taskId) {
     </div>
   `;
   
-  // Show or hide sections based on content
+  
   if (!task.subtasks || Object.keys(task.subtasks).length === 0) {
     document.getElementById("subtasks-section-heading").classList.add("d-none");
   }
@@ -984,11 +877,7 @@ function openTask(taskId) {
   }
 }
 
-/**
- * Generates HTML for list of assignees in task details
- * @param {Object} contacts - The contacts object
- * @returns {string} HTML for assignees list
- */
+
 function generateAssigneesList(contacts) {
   if (!contacts || Object.keys(contacts).length === 0) {
     return '';
@@ -1005,12 +894,7 @@ function generateAssigneesList(contacts) {
   }).join('');
 }
 
-/**
- * Generates HTML for list of subtasks in task details
- * @param {Object} subtasks - The subtasks object
- * @param {string} taskId - The task ID
- * @returns {string} HTML for subtasks list
- */
+
 function generateSubtasksList(subtasks, taskId) {
   if (!subtasks || Object.keys(subtasks).length === 0) {
     return '';
@@ -1030,22 +914,17 @@ function generateSubtasksList(subtasks, taskId) {
   }).join('');
 }
 
-/**
- * Toggles a subtask's completion status
- * @param {string} taskId - The task ID
- * @param {string} subtaskKey - The subtask key
- * @param {HTMLElement} element - The clicked element
- */
+
 function toggleSubtask(taskId, subtaskKey, element) {
   const task = tasksArray.find(t => t.id == taskId);
   if (!task || !task.subtasks || !task.subtasks[subtaskKey]) {
     return;
   }
   
-  // Toggle completion status
+  
   task.subtasks[subtaskKey].completed = !task.subtasks[subtaskKey].completed;
   
-  // Update UI
+  
   const checkboxImg = element.querySelector('img');
   if (task.subtasks[subtaskKey].completed) {
     checkboxImg.src = "../assets/images/subtasks_checked.svg";
@@ -1053,16 +932,11 @@ function toggleSubtask(taskId, subtaskKey, element) {
     checkboxImg.src = "../assets/images/subtasks_notchecked.svg";
   }
   
-  // Update on server
+  
   updateSubtaskStatus(taskId, subtaskKey, task.subtasks[subtaskKey].completed);
 }
 
-/**
- * Updates a subtask's status on the server
- * @param {string} taskId - The task ID
- * @param {string} subtaskKey - The subtask key
- * @param {boolean} completed - The new completion status
- */
+
 async function updateSubtaskStatus(taskId, subtaskKey, completed) {
   const task = tasksArray.find(t => t.id == taskId);
   if (!task || !task.subtasks || !task.subtasks[subtaskKey]) {
@@ -1070,61 +944,61 @@ async function updateSubtaskStatus(taskId, subtaskKey, completed) {
     return;
   }
   
-  // Update locally first for immediate feedback
+  
   const previousState = task.subtasks[subtaskKey].completed;
   task.subtasks[subtaskKey].completed = completed;
   
-  // Update UI elements if task detail view is open
+  
   const subtasksContainer = document.querySelector('.subtasks-container');
   if (subtasksContainer) {
-    // No need to refresh the entire board, just update the progress indicators
+    
     updateSubtaskProgressIndicators(task);
   }
   
-  // Check if using mock data
+  
   if (sessionStorage.getItem('auth_failed') === 'true' || !isAuthenticated()) {
     console.log("Using mock data, updating subtask in localStorage");
     
-    // Save updated tasks to localStorage for persistence between page loads
+    
     localStorage.setItem('mockTasks', JSON.stringify(tasksArray));
     
-    // Update the UI
+    
     createTaskOnBoard();
     
-    return; // Skip server update in mock mode
+    return; 
   }
   
   try {
-    // Send update to server
+    
     await apiPatch(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/subtasks/${subtaskKey}/`, {
       completed
     });
     
-    // Refresh data to ensure consistency
+    
     await fetchTasks();
     
-    // Update the UI only if necessary
+    
     if (document.getElementById("show-task-layer").classList.contains("d-none")) {
-      // If task detail is closed, just update the board
+      
       createTaskOnBoard();
     } else {
-      // If task detail is open, refresh it with the current task
+      
       openTask(taskId);
     }
   } catch (error) {
-    // Handle error and revert local change
+    
     handleApiError(error, () => {
       showErrorNotification("Failed to update subtask. Please try again.");
       
-      // Revert to previous state
+      
       if (task && task.subtasks && task.subtasks[subtaskKey] !== undefined) {
         task.subtasks[subtaskKey].completed = previousState;
         
-        // Update UI to reflect reverted state
+        
         if (document.getElementById("show-task-layer").classList.contains("d-none")) {
           createTaskOnBoard();
         } else {
-          // Update the checkbox in the UI
+          
           const subtaskElement = document.querySelector(`.show-task-subtask[data-subtask-key="${subtaskKey}"]`);
           if (subtaskElement) {
             const checkboxImg = subtaskElement.querySelector('img');
@@ -1140,10 +1014,7 @@ async function updateSubtaskStatus(taskId, subtaskKey, completed) {
   }
 }
 
-/**
- * Updates subtask progress indicators in the UI
- * @param {Object} task - The task containing subtasks
- */
+
 function updateSubtaskProgressIndicators(task) {
   if (!task || !task.subtasks) return;
   
@@ -1152,12 +1023,12 @@ function updateSubtaskProgressIndicators(task) {
   const completedSubtasks = Object.values(subtasks)
     .filter(subtask => subtask.completed).length;
   
-  // Calculate progress percentage
+  
   const progressPercentage = totalSubtasks === 0 
     ? 0 
     : (completedSubtasks / totalSubtasks) * 100;
   
-  // Update progress bar in task card if it exists
+  
   const taskCard = document.querySelector(`.task-on-board[data-task-id="${task.id}"]`);
   if (taskCard) {
     const progressBar = taskCard.querySelector('.progress-bar');
@@ -1173,30 +1044,22 @@ function updateSubtaskProgressIndicators(task) {
   }
 }
 
-/**
- * Opens the add task form for a specific category
- * @param {string} category - The board category
- */
+
 function openAddTask(category) {
-  // Store the selected category in sessionStorage
+  
   sessionStorage.setItem('selectedBoardCategory', category);
   
-  // Redirect to add task page
+  
   window.location.href = 'add_task.html';
 }
 
-/**
- * Closes the task details panel
- */
+
 function closeTask() {
   const layer = document.getElementById("show-task-layer");
   layer.classList.add("d-none");
 }
 
-/**
- * Opens the edit interface for a task
- * @param {string} taskId - The task ID
- */
+
 function showEditTask(taskId) {
   const task = tasksArray.find(t => t.id == taskId);
   if (!task) {
@@ -1204,11 +1067,11 @@ function showEditTask(taskId) {
     return;
   }
 
-  // Close the task view and prepare edit layer
+  
   document.getElementById("show-task-layer").classList.remove("d-none");
   const content = document.getElementById("show-task-inner-layer");
   
-  // Build edit form HTML
+  
   content.innerHTML = `
     <div class="show-task-firstrow">
       <div class="task-on-board-category ${task.task_category && task.task_category.toLowerCase().includes("user") ? "user-story" : "technical-task"}">${task.task_category || 'Task'}</div>
@@ -1273,15 +1136,13 @@ function showEditTask(taskId) {
     </form>
   `;
   
-  // Make sure we have the necessary CSS styles for the edit form
+  
   addEditTaskStyles();
 }
 
-/**
- * Adds necessary CSS styles for the edit task form
- */
+
 function addEditTaskStyles() {
-  // Check if styles are already added
+  
   if (document.getElementById('edit-task-styles')) return;
   
   const styleElement = document.createElement('style');
@@ -1414,11 +1275,7 @@ function addEditTaskStyles() {
   document.head.appendChild(styleElement);
 }
 
-/**
- * Generates HTML for contacts in the edit task form
- * @param {Object} contacts - The contacts object
- * @returns {string} HTML markup for contacts
- */
+
 function generateEditContactsHTML(contacts) {
   if (!contacts || Object.keys(contacts).length === 0) {
     return '<div class="no-contacts">No contacts assigned</div>';
@@ -1434,11 +1291,7 @@ function generateEditContactsHTML(contacts) {
   }).join('') + generateUnassignedContactsHTML(contacts);
 }
 
-/**
- * Generates HTML for unassigned contacts
- * @param {Object} assignedContacts - The currently assigned contacts
- * @returns {string} HTML markup for unassigned contacts
- */
+
 function generateUnassignedContactsHTML(assignedContacts) {
   const assignedIds = Object.keys(assignedContacts);
   const unassignedContacts = contactsArray.filter(contact => 
@@ -1462,11 +1315,7 @@ function generateUnassignedContactsHTML(assignedContacts) {
   `;
 }
 
-/**
- * Generates HTML for subtasks in the edit task form
- * @param {Object} subtasks - The subtasks object
- * @returns {string} HTML markup for subtasks
- */
+
 function generateEditSubtasksHTML(subtasks) {
   if (!subtasks || Object.keys(subtasks).length === 0) {
     return '<div class="no-subtasks">No subtasks created</div>';
@@ -1485,16 +1334,13 @@ function generateEditSubtasksHTML(subtasks) {
   }).join('');
 }
 
-/**
- * Sets the priority in the edit form
- * @param {string} priority - The priority level
- */
+
 function setEditPriority(priority) {
-  // Reset all buttons
+  
   document.querySelectorAll('.priority-btn').forEach(btn => {
     btn.classList.remove('active');
     
-    // Reset icons
+    
     const img = btn.querySelector('img');
     const btnId = btn.id;
     
@@ -1507,25 +1353,23 @@ function setEditPriority(priority) {
     }
   });
   
-  // Set the selected button as active
+  
   const activeButton = document.getElementById(`edit-${priority === 'urgent' ? 'high' : priority}-btn`);
   if (activeButton) {
     activeButton.classList.add('active');
     
-    // Update icon
+    
     const img = activeButton.querySelector('img');
     if (img) {
       img.src = `../assets/images/${priority === 'urgent' ? 'high' : priority}-white.svg`;
     }
   }
   
-  // Update hidden input
+  
   document.getElementById('edit-priority').value = priority;
 }
 
-/**
- * Adds a new subtask to the edit form
- */
+
 function addSubtaskToEdit() {
   const input = document.getElementById('new-subtask-input');
   const title = input.value.trim();
@@ -1539,7 +1383,7 @@ function addSubtaskToEdit() {
     container.innerHTML = '';
   }
   
-  // Generate a unique key for the new subtask
+  
   const newKey = `new-subtask-${Date.now()}`;
   
   const subtaskHTML = `
@@ -1556,17 +1400,14 @@ function addSubtaskToEdit() {
   input.value = '';
 }
 
-/**
- * Removes a subtask from the edit form
- * @param {string} key - The subtask key
- */
+
 function removeSubtaskFromEdit(key) {
   const subtaskItem = document.querySelector(`.edit-subtask-item[data-subtask-key="${key}"]`);
   
   if (subtaskItem) {
     subtaskItem.remove();
     
-    // Check if there are any subtasks left
+    
     const container = document.getElementById('edit-subtasks-container');
     if (!container.querySelector('.edit-subtask-item')) {
       container.innerHTML = '<div class="no-subtasks">No subtasks created</div>';
@@ -1574,10 +1415,7 @@ function removeSubtaskFromEdit(key) {
   }
 }
 
-/**
- * Saves the edited task data
- * @param {string} taskId - The task ID
- */
+
 function saveEditedTask(taskId) {
   const task = tasksArray.find(t => t.id == taskId);
   if (!task) {
@@ -1585,19 +1423,19 @@ function saveEditedTask(taskId) {
     return;
   }
   
-  // Get form values
+  
   const title = document.getElementById('edit-title').value;
   const description = document.getElementById('edit-description').value;
   const dueDate = document.getElementById('edit-due-date').value;
   const priority = document.getElementById('edit-priority').value;
   
-  // Get selected contacts
+  
   const selectedContactIds = [];
   document.querySelectorAll('.edit-contact-item input[type="checkbox"]:checked').forEach(checkbox => {
     selectedContactIds.push(checkbox.dataset.contactId);
   });
   
-  // Prepare updated contacts object
+  
   const updatedContacts = {};
   selectedContactIds.forEach(id => {
     const contact = contactsArray.find(c => c.id == id);
@@ -1607,12 +1445,12 @@ function saveEditedTask(taskId) {
         email: contact.email || `contact${id}@example.com`
       };
     } else if (task.contacts && task.contacts[id]) {
-      // Keep existing contact data if available
+      
       updatedContacts[id] = task.contacts[id];
     }
   });
   
-  // Get subtasks
+  
   const updatedSubtasks = {};
   document.querySelectorAll('.edit-subtask-item').forEach(item => {
     const key = item.dataset.subtaskKey;
@@ -1627,7 +1465,7 @@ function saveEditedTask(taskId) {
     }
   });
   
-  // Update task object
+  
   task.title = title;
   task.description = description;
   task.due_date = dueDate;
@@ -1635,11 +1473,11 @@ function saveEditedTask(taskId) {
   task.contacts = updatedContacts;
   task.subtasks = updatedSubtasks;
   
-  // Update mock data if using it
+  
   if (sessionStorage.getItem('auth_failed') === 'true' || !isAuthenticated()) {
     localStorage.setItem('mockTasks', JSON.stringify(tasksArray));
   } else {
-    // Try to update on server (will be skipped if API is not available)
+    
     apiPatch(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`, {
       title,
       description,
@@ -1652,39 +1490,36 @@ function saveEditedTask(taskId) {
     });
   }
   
-  // Refresh board and close edit view
+  
   createTaskOnBoard();
   closeTask();
   
-  // Show success message
+  
   showSuccessNotification("Task updated successfully");
 }
 
-/**
- * Deletes a task
- * @param {string} taskId - The task ID to delete
- */
+
 async function deleteTask(taskId) {
   if (!confirm("Are you sure you want to delete this task?")) {
     return;
   }
   
   try {
-    // Show loading/processing indicator
+    
     showLoadingIndicator();
     
-    // Find task and prepare for optimistic UI update
+    
     const taskIndex = tasksArray.findIndex(t => t.id == taskId);
     let removedTask = null;
     
     if (taskIndex !== -1) {
-      // Store task before removing for potential restore
+      
       removedTask = { ...tasksArray[taskIndex] };
       
-      // Remove from local array for immediate UI feedback
+      
       tasksArray.splice(taskIndex, 1);
       
-      // Update UI immediately
+      
       closeTask();
       createTaskOnBoard();
       checkAndAddNoTask();
@@ -1695,11 +1530,11 @@ async function deleteTask(taskId) {
       return;
     }
     
-    // Check if using mock data
+    
     if (sessionStorage.getItem('auth_failed') === 'true' || !isAuthenticated()) {
       console.log("Using mock data, skipping server delete");
       
-      // Update local data storage
+      
       for (let key in tasksData) {
         if (tasksData[key].id == taskId) {
           delete tasksData[key];
@@ -1707,32 +1542,32 @@ async function deleteTask(taskId) {
         }
       }
       
-      // Recalculate keys
+      
       tasksKeys = Object.keys(tasksData);
       
-      // Save updated tasks to localStorage for persistence between page loads
+      
       localStorage.setItem('mockTasks', JSON.stringify(tasksArray));
       
-      // Show success and return early
+      
       showSuccessNotification("Task deleted successfully (demo mode)");
       hideLoadingIndicator();
       return;
     }
     
-    // Send delete request to server (only if not in mock mode)
+    
     await apiDelete(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`);
     
-    // Refresh data to ensure consistency
+    
     await fetchTasks();
     createTaskOnBoard();
     checkAndAddNoTask();
     
-    // Show success message
+    
     showSuccessNotification("Task deleted successfully");
   } catch (error) {
     console.error("Error deleting task:", error);
     
-    // Use handleApiError if available
+    
     if (typeof handleApiError === 'function') {
       const errorInfo = handleApiError(error);
       showErrorNotification(`Failed to delete task: ${errorInfo.message}`);
@@ -1740,7 +1575,7 @@ async function deleteTask(taskId) {
       showErrorNotification("Failed to delete task. Please try again.");
     }
     
-    // Restore the task if we removed it locally
+    
     const taskIndex = tasksArray.findIndex(t => t.id == taskId);
     if (taskIndex === -1 && removedTask) {
       tasksArray.push(removedTask);
@@ -1748,18 +1583,14 @@ async function deleteTask(taskId) {
       checkAndAddNoTask();
     }
   } finally {
-    // Always hide loading indicator
+    
     hideLoadingIndicator();
   }
 }
 
-/**
- * Shows a success notification
- * @param {string} message - The message to display
- * @param {number} duration - Duration in milliseconds
- */
+
 function showSuccessNotification(message, duration = 3000) {
-  // Create notification container if it doesn't exist
+  
   let container = document.getElementById('success-notification-container');
   
   if (!container) {
@@ -1772,7 +1603,7 @@ function showSuccessNotification(message, duration = 3000) {
     document.body.appendChild(container);
   }
   
-  // Create notification element
+  
   const notification = document.createElement('div');
   notification.className = 'success-notification';
   notification.style.backgroundColor = '#4CAF50';
@@ -1786,12 +1617,12 @@ function showSuccessNotification(message, duration = 3000) {
   notification.style.alignItems = 'center';
   notification.style.maxWidth = '400px';
   
-  // Add message
+  
   const messageSpan = document.createElement('span');
   messageSpan.textContent = message;
   notification.appendChild(messageSpan);
   
-  // Add close button
+  
   const closeButton = document.createElement('button');
   closeButton.textContent = '×';
   closeButton.style.background = 'none';
@@ -1806,18 +1637,16 @@ function showSuccessNotification(message, duration = 3000) {
   };
   notification.appendChild(closeButton);
   
-  // Add to container
+  
   container.appendChild(notification);
   
-  // Auto-remove after duration
+  
   setTimeout(() => {
     notification.remove();
   }, duration);
 }
 
-/**
- * Toggles the user menu dropdown
- */
+
 function toggleUserPanel() {
   const userPanel = document.getElementById('user-panel');
   if (userPanel) {
@@ -1825,9 +1654,7 @@ function toggleUserPanel() {
   }
 }
 
-/**
- * Logs out the user and redirects to login page
- */
+
 function terminateSession() {
   localStorage.removeItem('token');
   localStorage.removeItem('userName');

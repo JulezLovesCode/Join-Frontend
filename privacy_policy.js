@@ -1,6 +1,4 @@
-/**
- * Toggles the user dropdown menu
- */
+
 function toggleUserMenu() {
   const dropdown = document.getElementById('user-dropdown');
   if (dropdown.style.display === 'block') {
@@ -10,9 +8,7 @@ function toggleUserMenu() {
   }
 }
 
-/**
- * Handles document-wide click events to close dropdown when clicking outside
- */
+
 document.addEventListener('click', function(event) {
   const dropdown = document.getElementById('user-dropdown');
   const profileAvatar = document.getElementById('profile-avatar');
@@ -22,9 +18,7 @@ document.addEventListener('click', function(event) {
   }
 });
 
-/**
- * Navigation functions
- */
+
 function navigateToDashboard() {
   window.location.href = 'summary.html';
 }
@@ -58,13 +52,11 @@ function endUserSession() {
   window.location.href = 'index.html';
 }
 
-/**
- * Generates user initials for the profile avatar
- */
+
 function generateInitials() {
   const profileAvatar = document.getElementById('profile-avatar');
   if (profileAvatar) {
-    // Get user data from localStorage or use default
+    
     const userData = JSON.parse(localStorage.getItem('userData')) || { initials: 'G' };
     profileAvatar.textContent = userData.initials || 'G';
   }

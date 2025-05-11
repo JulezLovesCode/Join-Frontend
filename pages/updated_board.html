@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="../styles/desktop_template.css" />
     <link rel="stylesheet" href="../styles/board.css" />
     
-    <!-- Add our new API configuration and error handling scripts -->
+    
     <script src="../scripts/api_config.js"></script>
     <script src="../scripts/error_handling.js"></script>
   </head>
@@ -102,7 +102,7 @@
             ondragover="allowDrop(event)" 
             ondragleave="resetBackground(event)"
           >
-            <!-- Tasks will be added here by JavaScript -->
+            
           </div>
         </div>
 
@@ -123,7 +123,7 @@
             ondragover="allowDrop(event)" 
             ondragleave="resetBackground(event)"
           >
-            <!-- Tasks will be added here by JavaScript -->
+            
           </div>
         </div>
 
@@ -144,7 +144,7 @@
             ondragover="allowDrop(event)" 
             ondragleave="resetBackground(event)"
           >
-            <!-- Tasks will be added here by JavaScript -->
+            
           </div>
         </div>
 
@@ -165,54 +165,50 @@
             ondragover="allowDrop(event)" 
             ondragleave="resetBackground(event)"
           >
-            <!-- Tasks will be added here by JavaScript -->
+            
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Task Detail Modal -->
+    
     <div class="add-contact-layer d-none" id="show-task-layer">
       <div class="show-task-inner-layer" id="show-task-inner-layer">
-        <!-- Task details will be added here by JavaScript -->
+        
       </div>
     </div>
     
-    <!-- Load scripts in the correct order -->
+    
     <script src="../scripts/api.js"></script>
     <script src="../scripts/board.js"></script>
     <script src="../scripts/board_layer.js"></script>
     <script src="../scripts/board_edit_layer.js"></script>
     
     <script>
-      /**
-       * Improved session termination with API logout
-       */
+      
       async function terminateSession() {
         try {
-          // Try to call logout API if authenticated
+          
           if (isAuthenticated()) {
             await apiPost(API_CONFIG.ENDPOINTS.AUTH.LOGOUT, {});
           }
         } catch (error) {
           console.warn('Logout API call failed:', error);
         } finally {
-          // Always clear local data regardless of API success
+          
           clearAuthentication();
           
-          // Clear additional storage items
+          
           sessionStorage.clear();
           localStorage.removeItem('userEmail');
           localStorage.removeItem('greetingShown');
           
-          // Redirect to login page
+          
           window.location.href = 'index.html';
         }
       }
       
-      /**
-       * Toggles the user panel dropdown
-       */
+      
       function toggleUserPanel() {
         const userPanel = document.getElementById('user-panel');
         userPanel.classList.toggle('hidden');

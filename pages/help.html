@@ -49,7 +49,7 @@
       >
     </div>
 
-    <!-- Legacy dropdown menu for compatibility -->
+    
     <div class="user-content" id="user-content" style="display: none">
       <a onclick="openLegalNotice()" href="#">Legal Notice</a>
       <a onclick="openPrivacyPolicy()" href="#">Privacy Policy</a>
@@ -255,23 +255,23 @@
 
     <script>
       function initializeUserProfile() {
-        // Get profile avatar element
+        
         const profileAvatar = document.getElementById('profileAvatar');
 
-        // Get user information from local storage or session
+        
         const userName =
           localStorage.getItem('userName') ||
           sessionStorage.getItem('userName') ||
           'Guest User';
 
-        // Extract initials
+        
         const initials = userName
           .split(' ')
           .map((part) => part.charAt(0))
           .join('')
           .toUpperCase();
 
-        // Set the avatar content
+        
         if (profileAvatar) {
           profileAvatar.textContent = initials;
         }

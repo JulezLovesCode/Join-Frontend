@@ -4,34 +4,32 @@ document.addEventListener('DOMContentLoaded', function () {
   setupGlobalClickHandler();
 });
 
-/**
- * Sets up a global click event handler to close dropdown menu when clicking outside
- */
+
 function setupGlobalClickHandler() {
-  // Add click handler for the profile avatar
+  
   const profileAvatar = document.getElementById('profileAvatar');
   if (profileAvatar) {
     console.log('Setting up profile avatar click handler');
     profileAvatar.addEventListener('click', function(event) {
-      event.stopPropagation(); // Prevent the document click from firing
+      event.stopPropagation(); 
       toggleMenu();
       toggleUserPanel();
     });
   }
 
-  // Add global click handler to close menu when clicking elsewhere
+  
   document.addEventListener('click', function(event) {
-    // Only close dropdown when clicking outside profile avatar and dropdown
+    
     const profilePanel = document.getElementById('profilePanel');
     const userContent = document.getElementById('user-content');
     
-    // Check if clicking outside the profile elements
+    
     const clickedOnAvatar = profileAvatar && profileAvatar.contains(event.target);
     const clickedOnProfilePanel = profilePanel && profilePanel.contains(event.target);
     const clickedOnUserContent = userContent && userContent.contains(event.target);
     
     if (!clickedOnAvatar && !clickedOnProfilePanel && !clickedOnUserContent) {
-      // Close both dropdowns
+      
       if (profilePanel) {
         profilePanel.style.display = 'none';
       }
@@ -58,7 +56,7 @@ function hideElementIfExists(elementId) {
   }
 }
 
-// Navigation state management
+
 function loadActiveNavigationState() {
   const activeItemId = sessionStorage.getItem('activeLink');
   const activeIconSrc = sessionStorage.getItem('activeLinkImgSrc');
@@ -145,7 +143,7 @@ function resetSecondaryNavigation() {
   });
 }
 
-// Navigation routing
+
 function routeTo(itemId, iconSrc, destination) {
   if (destination) {
     saveNavigationState(itemId, iconSrc);
@@ -181,7 +179,7 @@ function performLocalNavigation(itemId) {
   }
 }
 
-// Page-specific navigation functions
+
 function openSummaryView() {
   routeTo('link-summary', 'img/sidebar_summary_white.svg', 'summary.html');
 }
@@ -214,7 +212,7 @@ function openRegistration() {
   redirectToPage('signup.html');
 }
 
-// User interface interactions
+
 function toggleUserMenu() {
   const userPanel = document.getElementById('profilePanel');
   if (userPanel) {
@@ -222,9 +220,7 @@ function toggleUserMenu() {
   }
 }
 
-/**
- * Toggles the user profile dropdown panel
- */
+
 function toggleUserPanel() {
   console.log('toggleUserPanel called');
   const profilePanel = document.getElementById('profilePanel');
@@ -241,15 +237,13 @@ function toggleUserPanel() {
   }
 }
 
-/**
- * Legacy function for toggling user menu (kept for compatibility)
- */
+
 function toggleMenu() {
   console.log('toggleMenu called');
   const userContent = document.getElementById('user-content');
   const profilePanel = document.getElementById('profilePanel');
   
-  // Handle both dropdown elements to ensure compatibility
+  
   if (userContent) {
     console.log('Legacy dropdown found');
     userContent.style.display = userContent.style.display === 'block' ? 'none' : 'block';
@@ -260,44 +254,39 @@ function toggleMenu() {
     profilePanel.style.display = profilePanel.style.display === 'block' ? 'none' : 'block';
   }
   
-  // If neither was found, log error
+  
   if (!userContent && !profilePanel) {
     console.error('No dropdown menu elements found with IDs: user-content or profilePanel');
   }
 }
 
-/**
- * Initializes the user profile icon with initials
- */
+
 function initializeUserProfile() {
-  // Get profile avatar element
+  
   const profileAvatar = document.getElementById('profileAvatar');
   
-  // Get user information from local storage or session
+  
   const userName = localStorage.getItem('userName') || sessionStorage.getItem('userName') || 'Guest User';
   
-  // Extract initials
+  
   const initials = userName
       .split(' ')
       .map(part => part.charAt(0))
       .join('')
       .toUpperCase();
       
-  // Set the avatar content
+  
   if (profileAvatar) {
       profileAvatar.textContent = initials;
       
-      // Set a random background color if not already set
+      
       if (!profileAvatar.style.backgroundColor) {
           profileAvatar.style.backgroundColor = getRandomAvatarColor();
       }
   }
 }
 
-/**
- * Generates a random color for user avatars
- * @returns {string} CSS color string
- */
+
 function getRandomAvatarColor() {
   const colors = [
       '#FF7A00', '#FF5EB3', '#6E52FF', '#9327FF', 
@@ -327,21 +316,19 @@ function savePersistencePreference(shouldPersist) {
   localStorage.setItem('rememberMe', shouldPersist.toString());
 }
 
-// Session management
+
 function terminateSession() {
   clearStoredUserData();
   redirectToPage('index.html');
 }
 
-/**
- * Legacy function to log out the user
- */
+
 function logOut() {
   localStorage.removeItem('token');
   localStorage.removeItem('userProfile');
   localStorage.removeItem('userName');
   sessionStorage.removeItem('userName');
-  // No redirect here as we already handle that in the combined call
+  
 }
 
 function clearStoredUserData() {
@@ -351,7 +338,7 @@ function clearStoredUserData() {
   localStorage.removeItem('greetingShown');
 }
 
-// User profile display
+
 function createUserProfileInitials() {
   const profileDisplay = document.getElementById('user-logo');
   const userIdentifier = retrieveUserName();

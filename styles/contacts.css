@@ -239,5 +239,5 @@ h3 {
     color: white !important;
 }
 
-/* Import contact overlay styles */
+
 @import url("contacts_overlay.css");

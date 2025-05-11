@@ -297,7 +297,7 @@ input[type='password']::-ms-clear {
   display: none;
 }
 
-/* Media Queries - reordered and restructured */
+
 @media (min-width: 720px) {
 
   @keyframes translateElement {

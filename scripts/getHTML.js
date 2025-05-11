@@ -1,10 +1,4 @@
-/**
- * Creates the profile section of contact details
- * @param {string} letters - contact initials
- * @param {object} person - contact object
- * @param {string} identifier - contact identifier
- * @returns HTML structure for contact profile header
- */
+
 function renderContactProfileHeader(letters, person, identifier) {
   return `
           <div class="contact-profile-firstrow">
@@ -35,22 +29,13 @@ function renderContactProfileHeader(letters, person, identifier) {
       `;
 }
 
-/**
- * Formats text to ensure it doesn't exceed character limit
- * @param {string} text - text to format
- * @param {number} charLimit - maximum characters allowed
- * @returns formatted text with ellipsis if needed
- */
+
 function formatTextLength(text, charLimit) {
   text = text || '';
   return text.length > charLimit ? text.substring(0, charLimit) + '...' : text;
 }
 
-/**
- * Creates HTML for contacts in an edit panel
- * @param {number} memberCount - total number of contacts
- * @returns HTML for showing additional contacts count
- */
+
 function displayExtraContacts(memberCount) {
   if (memberCount > 4) {
     let additionalMembers = memberCount - 4;
@@ -63,10 +48,7 @@ function displayExtraContacts(memberCount) {
   return '';
 }
 
-/**
- * Generates HTML for edit icons in subtask interface
- * @returns HTML structure for subtask edit interface
- */
+
 function createSubtaskEditInterface() {
   return `<div id="closeAndCheck" class="closeAndCheck">
       <img id="closeSubtask" onclick="closeSubtask()" src="add_task_img/close.svg" alt="" />
@@ -75,12 +57,7 @@ function createSubtaskEditInterface() {
     </div>`;
 }
 
-/**
- * Creates a single subtask item display for edit view
- * @param {number} index - subtask index
- * @param {object} item - subtask data
- * @returns HTML for subtask item in edit interface
- */
+
 function buildSubtaskItem(index, item) {
   return `<div id="subtask-tasks${index}" class="subtasks-tasks">
         <div>
@@ -96,12 +73,7 @@ function buildSubtaskItem(index, item) {
       </div>`;
 }
 
-/**
- * Generates subtask item for editor view
- * @param {number} index - subtask identifier
- * @param {object} item - subtask data object
- * @returns HTML structure for subtask in editor
- */
+
 function generateSubtaskEditor(index, item) {
   return `
         <div id="subtask-tasks${index}" class="subtasks-tasks">
@@ -118,13 +90,7 @@ function generateSubtaskEditor(index, item) {
         </div>`;
 }
 
-/**
- * Creates HTML for contact list item
- * @param {string} identifier - contact unique id
- * @param {string} letters - contact initials
- * @param {object} person - contact data
- * @returns HTML for contact list entry
- */
+
 function createContactListEntry(identifier, letters, person) {
   return `
               <div id="contact${identifier}" onclick='showContact("${letters}", ${JSON.stringify(
@@ -141,11 +107,7 @@ function createContactListEntry(identifier, letters, person) {
           `;
 }
 
-/**
- * Builds a contact avatar icon
- * @param {object} person - contact information
- * @returns HTML for contact avatar in task view
- */
+
 function buildContactAvatar(person) {
   let initials = getInitials(person.name);
   return `
@@ -155,11 +117,7 @@ function buildContactAvatar(person) {
       `;
 }
 
-/**
- * Handles overflow for additional contacts in add task interface
- * @param {number} memberCount - number of total contacts
- * @returns HTML for showing additional contact count
- */
+
 function manageAdditionalContacts(memberCount) {
   if (!Array.isArray(selectedContacts)) {
     selectedContacts = Object.keys(selectedContacts)
@@ -179,11 +137,7 @@ function manageAdditionalContacts(memberCount) {
   return '';
 }
 
-/**
- * Renders a contact icon with initials
- * @param {object} person - contact data
- * @returns HTML for contact avatar in board view
- */
+
 function createContactBubble(person) {
   const initials = getInitials(person.name);
   return `
@@ -191,23 +145,14 @@ function createContactBubble(person) {
         `;
 }
 
-/**
- * Displays indicator for additional contacts in board view
- * @param {number} additionalMembers - number of remaining contacts
- * @returns HTML for contact overflow indicator
- */
+
 function renderExtraContactsBubble(additionalMembers) {
   return `
           <div class="task-on-board-contact" style="background-color: white; color: black; border: 1px solid black;">+${additionalMembers}</div>
       `;
 }
 
-/**
- * Creates a personalized contact bubble for task details
- * @param {object} person - contact information
- * @param {string} userName - current user's name
- * @returns HTML for contact item in task details
- */
+
 function renderTaskDetailContact(person, userName) {
   let displayName = person.name;
   if (person.name === userName) {
@@ -223,12 +168,7 @@ function renderTaskDetailContact(person, userName) {
         `;
 }
 
-/**
- * Generates HTML for subtasks in task detail view
- * @param {array} items - collection of subtasks
- * @param {string} identifier - task identifier
- * @returns HTML for subtask list in task details
- */
+
 function constructSubtasksList(items, identifier) {
   return Object.keys(items)
     .map((itemKey) => {
@@ -247,19 +187,7 @@ function constructSubtasksList(items, identifier) {
     .join('');
 }
 
-/**
- * Builds the task card HTML for board display
- * @param {string} identifier - task identifier
- * @param {string} categoryStyle - CSS class for task category
- * @param {object} item - task data
- * @param {number} index - task index
- * @param {string} membersHTML - HTML for assigned contacts
- * @param {string} priorityIcon - path to priority image
- * @param {number} totalItems - count of all subtasks
- * @param {number} finishedItems - count of completed subtasks
- * @param {number} completionRate - percentage of completion
- * @returns HTML structure for task card on board
- */
+
 function renderBoardTaskCard(
   identifier,
   categoryStyle,
@@ -274,7 +202,7 @@ function renderBoardTaskCard(
   let shortDescription = formatTextLength(item.description || '', 50);
 
   return `
-        <div onclick="openTask(${item?.id || 'undefined'})"  // Task-ID prüfen
+        <div onclick="openTask(${item?.id || 'undefined'})"  
              draggable="true" 
              ondragstart="startDragging(${identifier}, ${
     item?.id || 'undefined'
@@ -316,13 +244,7 @@ function renderBoardTaskCard(
       `;
 }
 
-/**
- * Creates priority button HTML for task editor
- * @param {string} level - priority level (high/medium/low)
- * @param {string} buttonClass - CSS class for selected state
- * @param {string} iconSrc - path to priority icon
- * @returns HTML for a priority button
- */
+
 function createPriorityButton(level, buttonClass, iconSrc) {
   const label =
     level === 'high' ? 'Urgent' : level === 'medium' ? 'Medium' : 'Low';
@@ -333,15 +255,7 @@ function createPriorityButton(level, buttonClass, iconSrc) {
   return `<button id="${buttonId}" onclick="${clickHandler}" class="prio-buttons pb-edit prio-buttons-shadow ${buttonClass}">${label} <img id="${imageId}" src="${iconSrc}"></button>`;
 }
 
-/**
- * Builds a task detail view section
- * @param {object} item - task data
- * @param {string} identifier - task identifier
- * @param {string} categoryStyle - CSS class for category
- * @param {string} membersHTML - HTML for assigned contacts
- * @param {string} itemsHTML - HTML for subtasks
- * @returns HTML structure for detailed task view
- */
+
 function constructTaskDetailView(
   item,
   identifier,
@@ -394,10 +308,7 @@ function constructTaskDetailView(
       `;
 }
 
-/**
- * Creates header section for task editor
- * @returns HTML for editor header with close button
- */
+
 function createEditorHeader() {
   return `
         <div class="show-task-firstrow flex-end">
@@ -408,13 +319,7 @@ function createEditorHeader() {
     `;
 }
 
-/**
- * Builds input field for task editor
- * @param {string} label - field label
- * @param {string} fieldId - input element ID
- * @param {string} value - current field value
- * @returns HTML for editor input field
- */
+
 function createEditorField(label, fieldId, value) {
   return `
         <div class="edit-task-element">
@@ -424,11 +329,7 @@ function createEditorField(label, fieldId, value) {
     `;
 }
 
-/**
- * Creates date field for task editor
- * @param {string} value - current date value
- * @returns HTML for date input component
- */
+
 function createDateField(value) {
   return `
         <div class="edit-task-element">
@@ -440,16 +341,7 @@ function createDateField(value) {
     `;
 }
 
-/**
- * Creates priority selection section for task editor
- * @param {string} highClass - CSS class for high priority button
- * @param {string} highIcon - high priority icon path
- * @param {string} mediumClass - CSS class for medium priority button
- * @param {string} mediumIcon - medium priority icon path
- * @param {string} lowClass - CSS class for low priority button
- * @param {string} lowIcon - low priority icon path
- * @returns HTML for priority selection component
- */
+
 function createPrioritySection(
   highClass,
   highIcon,
@@ -470,11 +362,7 @@ function createPrioritySection(
     `;
 }
 
-/**
- * Creates assignee selection component for task editor
- * @param {string} membersHTML - HTML for selected contacts
- * @returns HTML for contact assignment section
- */
+
 function createAssigneeSection(membersHTML) {
   return `
         <div class="edit-task-element">
@@ -491,11 +379,7 @@ function createAssigneeSection(membersHTML) {
     `;
 }
 
-/**
- * Creates subtask management section for task editor
- * @param {string} itemsHTML - HTML for existing subtasks
- * @returns HTML for subtask management component
- */
+
 function createSubtaskSection(itemsHTML) {
   return `
         <div class="edit-task-element">
@@ -510,11 +394,7 @@ function createSubtaskSection(itemsHTML) {
     `;
 }
 
-/**
- * Creates footer with save button for task editor
- * @param {string} identifier - task identifier
- * @returns HTML for editor footer
- */
+
 function createEditorFooter(identifier) {
   return `
         <div class="show-task-lastrow">
@@ -523,20 +403,7 @@ function createEditorFooter(identifier) {
     `;
 }
 
-/**
- * Assembles complete task editor interface
- * @param {object} item - task data
- * @param {string} identifier - task identifier
- * @param {string} membersHTML - HTML for assigned contacts
- * @param {string} itemsHTML - HTML for subtasks
- * @param {string} highClass - CSS class for high priority
- * @param {string} highIcon - high priority icon path
- * @param {string} mediumClass - CSS class for medium priority
- * @param {string} mediumIcon - medium priority icon path
- * @param {string} lowClass - CSS class for low priority
- * @param {string} lowIcon - low priority icon path
- * @returns Complete HTML for task editor
- */
+
 function buildTaskEditor(
   item,
   identifier,
@@ -574,23 +441,14 @@ function buildTaskEditor(
       `;
 }
 
-/**
- * Builds form section for add task interface
- * @param {string} title - section title
- * @param {boolean} required - whether field is required
- * @returns HTML for form section header
- */
+
 function createFormSectionHeader(title, required = false) {
   return `<p class="${title.toLowerCase().replace(' ', '-')}">${title}${
     required ? '<span class="span-red">*</span>' : ''
   }</p>`;
 }
 
-/**
- * Creates left column of add task form
- * @param {string} membersHTML - HTML for assigned contacts
- * @returns HTML for left section of add task form
- */
+
 function buildAddTaskLeftSection(membersHTML) {
   return `
         ${createFormSectionHeader('Title', true)}
@@ -612,10 +470,7 @@ function buildAddTaskLeftSection(membersHTML) {
     `;
 }
 
-/**
- * Creates right column of add task form
- * @returns HTML for right section of add task form
- */
+
 function buildAddTaskRightSection() {
   return `
         ${createFormSectionHeader('Due date', true)}
@@ -658,12 +513,7 @@ function buildAddTaskRightSection() {
     `;
 }
 
-/**
- * Creates add task form interface
- * @param {string} boardType - board category
- * @param {string} membersHTML - HTML for contacts selection
- * @returns Complete HTML for add task interface
- */
+
 function prepareTaskCreationInterface(boardType, membersHTML) {
   return `
             <div class="add-task-section add-task-section-layer width-auto no-margin-left">

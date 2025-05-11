@@ -1,4 +1,4 @@
-/* Card Containers */
+
 .summary-card-medium-container {
   width: 100%;
   display: flex;
@@ -33,7 +33,7 @@
   color: black;
 }
 
-/* Medium Card */
+
 .summary-card {
   width: 239px;
   height: 150px;
@@ -101,7 +101,7 @@
   font-weight: 600;
 }
 
-/* Big Card */
+
 .summary-card-big {
   width: 500px;
   height: 150px;
@@ -160,7 +160,7 @@
   font-weight: 400;
 }
 
-/* Small Card */
+
 .summary-card-small {
   width: 134px;
   height: 134px;

@@ -1,18 +1,18 @@
-/* Base Styling */
+
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
   background-color: #f6f7f8;
 }
 
-/* Main Container */
+
 .summary-main-container {
   display: flex;
   margin-top: 80px;
   margin-left: 300px;
 }
 
-/* Animation Screen */
+
 .animation-screen {
   position: absolute;
   top: 441px;
@@ -24,7 +24,7 @@ body {
   align-items: center;
 }
 
-/* Card container styling */
+
 .summary-card-container {
   display: flex;
   flex-direction: column;
@@ -34,7 +34,7 @@ body {
   margin-top: 32px;
 }
 
-/* Header */
+
 .headline-summary {
   font-size: large;
   padding: 8px;
@@ -67,7 +67,7 @@ body {
   border: 1px solid #29abe2;
 }
 
-/* Greeting Container */
+
 .greeting-container {
   display: flex;
   flex-direction: column;
@@ -86,7 +86,7 @@ body {
   font-weight: 700;
 }
 
-/* Animation classes */
+
 .d-none {
   display: none;
 }
@@ -132,4 +132,3 @@ body {
   transition: opacity 1.5s ease-in-out;
 }
 
-/* Note: Additional styles are loaded directly in HTML */

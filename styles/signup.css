@@ -1,4 +1,4 @@
-/* Base Styles */
+
 body {
   margin: 0;
   box-sizing: border-box;
@@ -12,7 +12,7 @@ body {
   flex-direction: column;
 }
 
-/* Typography */
+
 h1 {
   font-weight: 700;
   font-size: 61px;
@@ -31,7 +31,7 @@ a {
   color: #29abe2;
 }
 
-/* Logo Container */
+
 .brandLogo {
   position: absolute;
   left: 77px;
@@ -43,7 +43,7 @@ a {
   height: 121.97px;
 }
 
-/* Main Container */
+
 .registrationContainer {
   display: flex;
   flex-direction: column;
@@ -59,7 +59,7 @@ a {
   padding: 60px 0;
 }
 
-/* Header Styling */
+
 .titleWithIndicator {
   display: flex;
   flex-direction: column;
@@ -73,7 +73,7 @@ a {
   background-color: #29abe2;
 }
 
-/* Form Elements */
+
 .registrationForm {
   display: flex;
   flex-direction: column;
@@ -125,7 +125,7 @@ a {
   text-align: left;
 }
 
-/* Form Icons */
+
 .emailIcon {
   width: 20px;
   height: 16px;
@@ -148,7 +148,7 @@ a {
   cursor: pointer;
 }
 
-/* Checkbox Styling */
+
 .persistenceOption {
   display: flex;
   flex-direction: row;
@@ -177,7 +177,7 @@ a {
   line-height: 19.2px;
 }
 
-/* Button Styles */
+
 .actionButtons {
   gap: 35px;
   display: flex;
@@ -227,7 +227,7 @@ a {
   justify-content: center;
 }
 
-/* Back Arrow */
+
 .backNavigation {
   position: absolute;
   left: 50px;
@@ -240,7 +240,7 @@ a {
   cursor: pointer;
 }
 
-/* Footer Links */
+
 .footerLinks {
   position: fixed;
   bottom: 20px;
@@ -258,7 +258,7 @@ a {
   color: #a8a8a8;
 }
 
-/* Success Message */
+
 .confirmationToast {
   display: flex;
   align-items: center;
@@ -283,7 +283,7 @@ a {
   opacity: 1;
 }
 
-/* Utility Classes */
+
 .hidden {
   display: none;
 }
@@ -296,15 +296,15 @@ a {
   padding: 15px 24px;
 }
 
-/* Password Field Customization */
+
 input[type='password']::-ms-reveal,
 input[type='password']::-ms-clear {
   display: none;
 }
 
-/* Media Queries */
+
 @media (min-width: 740px) {
-  /* Padding is now set in the main style */
+  
 }
 
 @media (max-width: 1000px) {

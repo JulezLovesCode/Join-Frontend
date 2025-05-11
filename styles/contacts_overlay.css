@@ -30,7 +30,7 @@
     }
 }
 
-/* ADD CONTACT LAYER */
+
 
 .add-contact-layer {
     position: fixed;
@@ -226,5 +226,5 @@
     height: 24px;
 }
 
-/* Import responsive contact styles */
+
 @import url("contacts_responsive.css");

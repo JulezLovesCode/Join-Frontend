@@ -1,11 +1,11 @@
-/* Base styling */
+
 body {
   margin: 0;
   font-family: "Inter", sans-serif;
   background-color: #f6f7f8;
 }
 
-/* Typography hierarchy */
+
 h1 {
   font-size: 73px;
   margin-block-start: 0;
@@ -26,7 +26,7 @@ p {
   font-size: 20px;
 }
 
-/* Layout containers */
+
 .data-protection {
   margin: 80px 100px 32px 300px;
   position: sticky;
@@ -57,12 +57,12 @@ p {
   width: 30px;
 }
 
-/* Content styling */
+
 .legal-document {
   margin-top: 40px;
 }
 
-/* Responsive layout adjustments */
+
 @media (max-width: 1425px) {
   .data-protection {
     margin: 200px 100px 32px 300px;

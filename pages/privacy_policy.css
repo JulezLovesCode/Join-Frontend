@@ -1,11 +1,11 @@
-/* Base styling */
+
 body {
   margin: 0;
   font-family: "Inter", sans-serif;
   background-color: #f6f7f8;
 }
 
-/* Typography hierarchy */
+
 h1 {
   font-size: 73px;
   margin-block-start: 0;
@@ -30,7 +30,7 @@ p {
   display: none;
 }
 
-/* Layout containers */
+
 .privacy-policy {
   margin: 80px 100px 32px 300px;
   position: sticky;
@@ -61,7 +61,7 @@ p {
   width: 30px;
 }
 
-/* Header and Sidebar */
+
 header {
   position: sticky;
   top: 0;
@@ -223,12 +223,12 @@ header {
   background-color: #091931;
 }
 
-/* Privacy Policy Content */
+
 .official-statement {
   margin-top: 40px;
 }
 
-/* Responsive layout adjustments */
+
 @media (max-width: 1425px) {
   .privacy-policy {
     margin: 200px 100px 32px 300px;
