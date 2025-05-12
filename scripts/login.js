@@ -11,11 +11,12 @@ function initializeLoginSystem() {
   const userIdentifier = document.getElementById('loginEmail');
   const userSecret = document.getElementById('loginPassword');
 
-  
+
   if (saveCredentials === 'true') {
     checkboxElement.src = '../assets/images/Rectangle2.png';
-    userIdentifier.value = localStorage.getItem('userIdentifier');
-    userSecret.value = localStorage.getItem('userSecret');
+    // Only prefill email, not password
+    userIdentifier.value = localStorage.getItem('userEmail') || '';
+    // Password is never stored or retrieved from localStorage
   } else {
     checkboxElement.src = '../assets/images/Rectangle1.png';
   }
@@ -99,16 +100,17 @@ function toggleRememberOption() {
 function clearSavedCredentials(checkboxElement) {
   checkboxElement.src = '../assets/images/Rectangle1.png';
   localStorage.setItem('saveCredentials', 'false');
-  localStorage.removeItem('userIdentifier');
-  localStorage.removeItem('userSecret');
+  // No longer storing raw credentials
+  localStorage.removeItem('userEmail');
 }
 
 
 function saveUserCredentials(checkboxElement, userIdentifier, userSecret) {
   checkboxElement.src = '../assets/images/Rectangle2.png';
   localStorage.setItem('saveCredentials', 'true');
-  localStorage.setItem('userIdentifier', userIdentifier);
-  localStorage.setItem('userSecret', userSecret);
+  // Only store email for login form prefill, not password
+  localStorage.setItem('userEmail', userIdentifier);
+  // We don't store passwords anymore
 }
 
 
@@ -216,8 +218,6 @@ async function terminateUserSession() {
     localStorage.removeItem('userEmail');
     localStorage.removeItem('greetingShown');
     localStorage.removeItem('saveCredentials');
-    localStorage.removeItem('userIdentifier');
-    localStorage.removeItem('userSecret');
     
     
     const formElements = [

@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="../styles/fonts.css">
   <link rel="stylesheet" href="../styles/signup.css">
   <script src="../scripts/getHTML.js"></script>
+  <script src="../scripts/api_config.js"></script>
 </head>
 <body>
   <div class="brandLogo">
@@ -167,12 +168,12 @@
       try {
         
         const sanitizedUsername = name.replace(/ /g, "_");
-        
-        
-        const API_BASE_URL = 'http://127.0.0.1:8000/';
-        
-        
-        const response = await fetch(`${API_BASE_URL}api/auth/registration/`, {
+
+        // Use API_CONFIG from api_config.js if available, or fallback to direct URL
+        const API_BASE_URL = window.API_CONFIG ? window.API_CONFIG.BASE_URL : 'http://127.0.0.1:8000/';
+        const REGISTER_ENDPOINT = window.API_CONFIG ? window.API_CONFIG.ENDPOINTS.AUTH.REGISTER : 'api/auth/registration/';
+
+        const response = await fetch(`${API_BASE_URL}${REGISTER_ENDPOINT}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -204,16 +205,17 @@
           
           if (data.token) {
             localStorage.setItem("token", data.token);
-            
-            if (data.user) {
-              localStorage.setItem("userProfile", JSON.stringify(data.user || {}));
-              sessionStorage.setItem("userName", data.user.username || email);
+
+            // Store username from the server response
+            if (data.username) {
+              sessionStorage.setItem("userName", data.username);
+            } else {
+              sessionStorage.setItem("userName", email.split('@')[0]);
             }
           }
-          
-          
-          localStorage.setItem('userIdentifier', email);
-          localStorage.setItem('userSecret', password);
+
+          // No longer storing raw credentials in localStorage
+          // Only using token-based authentication
           
           
           document.getElementById('fullName').value = '';
