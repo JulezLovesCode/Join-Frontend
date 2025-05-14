@@ -38,69 +38,42 @@ function getInitials(name) {
 
 async function loadContacts() {
   try {
+    // Fetch contacts from the API
     const response = await makeApiRequest(CONTACTS_API_ENDPOINT, 'GET');
     
     if (response && !response.error) {
+      // Process API response
       contacts = Array.isArray(response) ? response : Object.values(response);
       
-      
+      // Ensure all contacts have a color
       contacts.forEach(contact => {
         if (!contactColors[contact.id]) {
           contactColors[contact.id] = generateRandomColor();
         }
         contact.color = contactColors[contact.id];
       });
+      
+      console.log('Loaded contacts from API:', contacts);
+      return contacts;
+    } else {
+      throw new Error('Error in API response');
     }
   } catch (error) {
-    console.error('Error loading contacts:', error);
+    console.error('Error loading contacts from API:', error);
     
+    // Show error message to user
+    showErrorMessage('Could not load contacts from the server. Please try again later.');
     
-    const mockContactsJson = localStorage.getItem('mockContacts');
-    if (mockContactsJson) {
-      try {
-        const storedContacts = JSON.parse(mockContactsJson);
-        if (Array.isArray(storedContacts) && storedContacts.length > 0) {
-          contacts = storedContacts;
-          
-          contacts.forEach(contact => {
-            if (!contact.color) {
-              contact.color = contactColors[contact.id] || generateRandomColor();
-              contactColors[contact.id] = contact.color;
-            }
-          });
-          console.log("Using contacts from localStorage:", contacts);
-          
-          localStorage.setItem('mockContacts', JSON.stringify(contacts));
-        } else {
-          createDefaultContacts();
-        }
-      } catch (e) {
-        console.error("Error parsing stored contacts:", e);
-        createDefaultContacts();
-      }
-    } else {
-      createDefaultContacts();
-    }
+    // Return empty array as fallback
+    return [];
   }
 }
 
 
+// This function is no longer needed as we use the API exclusively
 function createDefaultContacts() {
-  
-  contacts = [
-    { id: 1, name: "Martina Bohm", email: "martina@example.com", phone: "123-456-7890", color: "#FF7A00" },
-    { id: 2, name: "Sas Sas", email: "sas@example.com", phone: "234-567-8901", color: "#FF5EB3" },
-    { id: 3, name: "Tobias Mal", email: "tobias@example.com", phone: "345-678-9012", color: "#6E52FF" }
-  ];
-  
-  
-  contacts.forEach(contact => {
-    contactColors[contact.id] = contact.color;
-  });
-  
-  
-  localStorage.setItem('mockContacts', JSON.stringify(contacts));
-  console.log("Created default contacts:", contacts);
+  contacts = [];
+  console.log("Default contacts not created - using API instead");
 }
 
 
@@ -234,15 +207,19 @@ function updateSelectedContactStyle(contactId) {
 
 
 function openContactForm() {
+  console.log("Contact form function called");
   const modal = document.getElementById('contact-form-overlay');
   if (modal) {
-    modal.classList.remove('d-none');
-    
+    console.log("Contact modal found, setting display to block");
+    // Use direct style manipulation instead of classList
+    modal.style.display = "flex";
     
     const panel = document.getElementById('contact-form-panel');
     if (panel) {
       panel.classList.add('slide-in-right');
     }
+  } else {
+    console.error("Could not find contact-form-overlay element in openContactForm");
   }
   
   
@@ -257,21 +234,25 @@ function openContactForm() {
 
 
 function closeContactForm() {
+  console.log("Close contact form called");
   const modal = document.getElementById('contact-form-overlay');
   const panel = document.getElementById('contact-form-panel');
   
   if (panel) {
-    
+    console.log("Panel found, adding slide-out animation");
     panel.classList.remove('slide-in-right');
     panel.classList.add('slide-out-right');
     
-    
     setTimeout(() => {
-      if (modal) modal.classList.add('d-none');
+      console.log("Animation timeout completed, hiding modal");
+      if (modal) modal.style.display = "none";
       if (panel) panel.classList.remove('slide-out-right');
     }, 500);
   } else if (modal) {
-    modal.classList.add('d-none');
+    console.log("No panel found, directly hiding modal");
+    modal.style.display = "none";
+  } else {
+    console.error("Could not find modal or panel in closeContactForm");
   }
 }
 
@@ -325,13 +306,13 @@ function closeEditContactForm() {
 
 
 async function createContact() {
-  
+  // Get form values
   const name = document.getElementById('contact-name-input').value;
   const email = document.getElementById('contact-email-input').value;
   const phone = document.getElementById('contact-phone-input').value;
   const color = generateRandomColor();
   
-  
+  // Create new contact object
   const newContact = {
     name: name,
     email: email,
@@ -340,79 +321,47 @@ async function createContact() {
   };
   
   try {
-    
-    let response;
-    try {
-      response = await makeApiRequest(CONTACTS_API_ENDPOINT, 'POST', newContact);
-    } catch (apiError) {
-      console.log('API error, using local storage instead:', apiError);
-      response = null;
-    }
+    // Send contact to the API
+    const response = await makeApiRequest(CONTACTS_API_ENDPOINT, 'POST', newContact);
     
     if (response && !response.error) {
-      
+      // Save color for the new contact
       contactColors[response.id] = color;
       
-      
+      // Close form
       closeContactForm();
       
-      
+      // Refresh contacts list
       await loadContacts();
       renderContactsList();
       
-      
+      // Show details of the new contact
       showContactDetails(response.id);
       
-      
+      // Show success message
       showSuccessMessage('Contact successfully created');
     } else {
-      
-      console.log('Creating contact locally');
-      
-      
-      const maxId = contacts.reduce((max, contact) => Math.max(max, contact.id || 0), 0);
-      newContact.id = maxId + 1;
-      
-      
-      contacts.push(newContact);
-      
-      
-      contactColors[newContact.id] = color;
-      
-      
-      localStorage.setItem('mockContacts', JSON.stringify(contacts));
-      
-      
-      closeContactForm();
-      
-      
-      renderContactsList();
-      
-      
-      showContactDetails(newContact.id);
-      
-      
-      showSuccessMessage('Contact successfully created (saved locally)');
+      throw new Error('API returned error or invalid response');
     }
   } catch (error) {
     console.error('Error creating contact:', error);
-    showErrorMessage('Error creating contact');
+    showErrorMessage('Error creating contact. Please try again later.');
   }
 }
 
 
 async function updateContact() {
-  
+  // Get form values
   const id = document.getElementById('edit-contact-id').value;
   const name = document.getElementById('edit-contact-name').value;
   const email = document.getElementById('edit-contact-email').value;
   const phone = document.getElementById('edit-contact-phone').value;
   
-  
+  // Get existing contact color or generate new one
   const existingContact = contacts.find(c => c.id == id);
   const color = existingContact ? existingContact.color : generateRandomColor();
   
-  
+  // Create updated contact object
   const updatedContact = {
     name: name,
     email: email,
@@ -421,28 +370,28 @@ async function updateContact() {
   };
   
   try {
-    
+    // Send updated contact to the API
     const response = await makeApiRequest(`${CONTACTS_API_ENDPOINT}${id}/`, 'PUT', updatedContact);
     
     if (response && !response.error) {
-      
+      // Close form
       closeEditContactForm();
       
-      
+      // Refresh contacts list
       await loadContacts();
       renderContactsList();
       
-      
+      // Show details of the updated contact
       showContactDetails(parseInt(id));
       
-      
+      // Show success message
       showSuccessMessage('Contact successfully updated');
     } else {
-      showErrorMessage('Failed to update contact');
+      throw new Error('API returned error or invalid response');
     }
   } catch (error) {
     console.error('Error updating contact:', error);
-    showErrorMessage('Error updating contact');
+    showErrorMessage('Error updating contact. Please try again later.');
   }
 }
 
@@ -548,3 +497,16 @@ function toggleUserMenu() {
     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
   }
 }
+
+// Expose functions to global scope to ensure they're available for onclick attributes
+window.openContactForm = openContactForm;
+window.closeContactForm = closeContactForm;
+window.createContact = createContact;
+window.openEditContactForm = openEditContactForm;
+window.closeEditContactForm = closeEditContactForm;
+window.updateContact = updateContact;
+window.deleteContact = deleteContact;
+window.showContactDetails = showContactDetails;
+window.mobileBackToContactsList = mobileBackToContactsList;
+window.terminateUserSession = terminateUserSession;
+window.toggleUserMenu = toggleUserMenu;

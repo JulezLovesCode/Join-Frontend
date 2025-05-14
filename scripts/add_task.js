@@ -1,7 +1,19 @@
 
-let subtasks = [];
-let contactSelections = {};
-let currentPriority = 'medium';
+// Define variables only if they don't already exist
+if (typeof window.subtasks === 'undefined') {
+  let subtasks = [];
+  window.subtasks = subtasks;
+}
+
+if (typeof window.contactSelections === 'undefined') {
+  let contactSelections = {};
+  window.contactSelections = contactSelections;
+}
+
+if (typeof window.currentPriority === 'undefined') {
+  let currentPriority = 'medium';
+  window.currentPriority = currentPriority;
+}
 
 
 async function initializeTaskCreation() {
@@ -341,6 +353,7 @@ async function createNewTask(boardCategory) {
   if (!boardCategory) {
     boardCategory = sessionStorage.getItem('selectedBoardCategory') || 'to-do';
   }
+  
   try {
     
     if (!validateTaskForm()) {
@@ -366,103 +379,34 @@ async function createNewTask(boardCategory) {
     console.log('Creating new task with data:', taskData);
     
     
-    let response = null;
-    try {
-      
-      apiPost(API_CONFIG.ENDPOINTS.TASKS, taskData).catch(err => {
-        console.log("API call failed as expected (using fallback)");
-      });
-    } catch (err) {
-      
-    }
+    // Send task data to API
+    const response = await apiPost(API_CONFIG.ENDPOINTS.TASKS, taskData);
     
-    
-    if (true) { 
-      console.log("Creating task in fallback mode");
-      
-      
-      try {
-        
-        const existingMockTasks = JSON.parse(localStorage.getItem('mockTasks') || '[]');
-        
-        
-        const newTaskId = existingMockTasks.length > 0 ? 
-                          Math.max(...existingMockTasks.map(t => t.id)) + 1 : 1;
-        
-        
-        const newTask = {
-          id: newTaskId,
-          title: taskData.title,
-          description: taskData.description,
-          due_date: taskData.due_date,
-          priority: taskData.priority,
-          task_category: taskData.task_category,
-          board_category: taskData.board_category,
-          
-          contacts: taskData.member_assignments.reduce((obj, id) => {
-            
-            const contact = window.contactsArray.find(c => c.id === id);
-            if (contact) {
-              obj[id] = { name: contact.name, email: contact.email || `contact${id}@example.com` };
-            }
-            return obj;
-          }, {}),
-          
-          subtasks: Array.isArray(taskData.subtasks) && taskData.subtasks.length > 0 ? 
-            taskData.subtasks.reduce((obj, subtask, index) => {
-              obj[`subtask${index+1}`] = { 
-                title: subtask.title, 
-                completed: subtask.completed || false 
-              };
-              return obj;
-            }, {}) : {}
-        };
-        
-        
-        existingMockTasks.push(newTask);
-        
-        
-        localStorage.setItem('mockTasks', JSON.stringify(existingMockTasks));
-        
-        console.log("Task saved to mock storage:", newTask);
-      } catch (error) {
-        console.error("Error saving mock task:", error);
-      }
-      
+    if (response && !response.error) {
+      // Success - show confirmation
+      console.log("Task created successfully via API:", response);
       
       const confirmation = document.getElementById('task-confirmation');
       confirmation.classList.add('animate');
       
-      
+      // Reset form
       resetTaskForm();
       
-      
+      // Redirect after animation completes
       setTimeout(() => {
         confirmation.classList.remove('animate');
-        
         sessionStorage.removeItem('selectedBoardCategory');
-        
-        window.location.href = 'http://127.0.0.1:5500/join_client/pages/board.html';
+        console.log("Redirecting to board.html after task creation");
+        window.location.href = 'board.html';
       }, 1500);
-    } else if (response && !response.error) {
       
-      console.log("Task created successfully via API");
-      
-      
-      const confirmation = document.getElementById('task-confirmation');
-      confirmation.classList.add('animate');
-      
-      
-      resetTaskForm();
-      
-      
+      // Add a backup redirect in case the setTimeout fails
       setTimeout(() => {
-        confirmation.classList.remove('animate');
-        
-        sessionStorage.removeItem('selectedBoardCategory');
-        
-        window.location.href = 'http://127.0.0.1:5500/join_client/pages/board.html';
-      }, 1500);
+        if (window.location.href.includes('add_task.html')) {
+          console.log("Backup redirect to board.html activated");
+          window.location.href = 'board.html';
+        }
+      }, 3000);
     } else {
       console.error('Error creating task:', response?.error || 'Unknown error');
       

@@ -1,5 +1,11 @@
 
-const API_BASE_URL = 'http://127.0.0.1:8000/';
+// Check if API_BASE_URL is already defined to avoid redeclaration errors
+if (typeof window.API_BASE_URL === 'undefined') {
+  const API_BASE_URL = 'http://127.0.0.1:8000/';
+  
+  // Assign to window to make it globally available
+  window.API_BASE_URL = API_BASE_URL;
+}
 
 
 function buildRequestConfig(method, authToken, data) {

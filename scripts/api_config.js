@@ -1,25 +1,29 @@
 
-
-
-const API_CONFIG = {
-  BASE_URL: 'http://127.0.0.1:8000/',
-  ENDPOINTS: {
-    TASKS: 'api/tasks/',
-    SUBTASKS: 'api/subtasks/',
-    CONTACTS: 'api/contacts/',
-    AUTH: {
-      LOGIN: 'api/auth/login/',
-      REGISTER: 'api/auth/registration/',
-      LOGOUT: 'api/auth/logout/',
-      GUEST_LOGIN: 'api/auth/guest-login/'
+// Check if API_CONFIG is already defined to avoid redeclaration errors
+if (typeof window.API_CONFIG === 'undefined') {
+  const API_CONFIG = {
+    BASE_URL: 'http://127.0.0.1:8000/',
+    ENDPOINTS: {
+      TASKS: 'api/tasks/',
+      SUBTASKS: 'api/subtasks/',
+      CONTACTS: 'api/contacts/',
+      AUTH: {
+        LOGIN: 'api/auth/login/',
+        REGISTER: 'api/auth/registration/',
+        LOGOUT: 'api/auth/logout/',
+        GUEST_LOGIN: 'api/auth/guest-login/'
+      },
+      BOARD: 'api/board/',
+      SUMMARY: 'api/summary/'
     },
-    BOARD: 'api/board/',
-    SUMMARY: 'api/summary/'
-  },
-  TOKEN_STORAGE_KEY: 'token',
-  USERNAME_STORAGE_KEY: 'userName',
-  GUEST_ID_KEY: 'guest_id'
-};
+    TOKEN_STORAGE_KEY: 'token',
+    USERNAME_STORAGE_KEY: 'userName',
+    GUEST_ID_KEY: 'guest_id'
+  };
+  
+  // Assign to window to make it globally available
+  window.API_CONFIG = API_CONFIG;
+}
 
 
 function buildApiUrl(endpoint) {
@@ -41,26 +45,16 @@ function createAuthHeaders() {
     'Content-Type': 'application/json'
   };
   
+  // Get token from storage
   const token = localStorage.getItem(API_CONFIG.TOKEN_STORAGE_KEY);
+  const guestId = sessionStorage.getItem(API_CONFIG.GUEST_ID_KEY);
+  
   if (token) {
-    
-    try {
-      const tokenData = JSON.parse(atob(token.split('.')[1]));
-      const now = Math.floor(Date.now() / 1000);
-      
-      
-      if (tokenData.exp && tokenData.exp < now) {
-        console.warn("Token appears to be expired, not using it");
-        localStorage.removeItem(API_CONFIG.TOKEN_STORAGE_KEY);
-        return headers;
-      }
-    } catch (e) {
-      
-      console.warn("Could not parse token, using it anyway");
-    }
-    
+    // Add token to headers for authenticated requests
     headers['Authorization'] = `Token ${token}`;
   }
+  
+  // Removed X-Request-Time header to avoid CORS issues
   
   return headers;
 }
@@ -70,8 +64,18 @@ async function apiGet(endpoint, requiresAuth = true) {
   const url = buildApiUrl(endpoint);
   const headers = requiresAuth ? createAuthHeaders() : { 'Content-Type': 'application/json' };
   
+  // Add guest_id to URL if available and token is not present
+  let finalUrl = url;
+  if (!localStorage.getItem(API_CONFIG.TOKEN_STORAGE_KEY)) {
+    const guestId = sessionStorage.getItem(API_CONFIG.GUEST_ID_KEY);
+    if (guestId && !finalUrl.includes('guest_id=')) {
+      const separator = finalUrl.includes('?') ? '&' : '?';
+      finalUrl = `${finalUrl}${separator}guest_id=${guestId}`;
+    }
+  }
+  
   try {
-    const response = await fetch(url, {
+    const response = await fetch(finalUrl, {
       method: 'GET',
       headers
     });
@@ -88,8 +92,18 @@ async function apiPost(endpoint, data, requiresAuth = true) {
   const url = buildApiUrl(endpoint);
   const headers = requiresAuth ? createAuthHeaders() : { 'Content-Type': 'application/json' };
   
+  // Add guest_id to URL if available and token is not present
+  let finalUrl = url;
+  if (!localStorage.getItem(API_CONFIG.TOKEN_STORAGE_KEY) && !endpoint.includes('login')) {
+    const guestId = sessionStorage.getItem(API_CONFIG.GUEST_ID_KEY);
+    if (guestId && !finalUrl.includes('guest_id=')) {
+      const separator = finalUrl.includes('?') ? '&' : '?';
+      finalUrl = `${finalUrl}${separator}guest_id=${guestId}`;
+    }
+  }
+  
   try {
-    const response = await fetch(url, {
+    const response = await fetch(finalUrl, {
       method: 'POST',
       headers,
       body: JSON.stringify(data)
@@ -182,11 +196,22 @@ async function handleApiResponse(response) {
     
     
     if (response.status === 401 || response.status === 403) {
-      console.warn("Authentication error detected, clearing token");
-      localStorage.removeItem(API_CONFIG.TOKEN_STORAGE_KEY);
+      console.warn("Authentication error detected");
       
+      // Check if we've had too many recent auth failures
+      const lastFailTime = sessionStorage.getItem('last_auth_fail_time');
+      const now = new Date().getTime();
       
-      sessionStorage.setItem('auth_failed', 'true');
+      if (!lastFailTime || (now - parseInt(lastFailTime)) > 30000) { // 30 second cooldown
+        // Record this failure time
+        sessionStorage.setItem('last_auth_fail_time', now.toString());
+        sessionStorage.setItem('auth_failed', 'true');
+        console.warn("Auth failure cooldown started - clearing token");
+        localStorage.removeItem(API_CONFIG.TOKEN_STORAGE_KEY);
+      } else {
+        // Still in cooldown period, don't clear token yet
+        console.log("Too many auth failures in short period, not clearing token yet");
+      }
     }
     
     throw error;

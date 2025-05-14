@@ -9,6 +9,12 @@
     <link rel="stylesheet" href="../styles/desktop_template.css" />
     <link rel="stylesheet" href="../styles/add_task.css" />
     <link rel="stylesheet" href="../styles/add_task_elements.css" />
+    <script src="../scripts/api_config.js"></script>
+    <script src="../scripts/api.js"></script>
+    <script src="../scripts/add_task.js"></script>
+    <script src="../scripts/add_task_subtasks.js"></script>
+    <script src="../scripts/add_task_contacts.js"></script>
+    <script src="../scripts/error_handling.js"></script>
     <link rel="stylesheet" href="../styles/add_task_responsive.css" />
     <link rel="stylesheet" href="../styles/board.css" />
     
@@ -378,10 +384,12 @@
         };
       });
     </script>
-    <script src="../scripts/add_task_contacts.js"></script>
     <script src="../scripts/board.js"></script>
     
     <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        initializeTaskCreation();
+      });
       
       function toggleContactSelector() {
         console.log("Inline toggleContactSelector called");

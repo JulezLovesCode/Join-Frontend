@@ -1,14 +1,20 @@
 
 
 
-const ERROR_TYPES = {
-  NETWORK: 'network_error',
-  AUTH: 'authentication_error',
-  VALIDATION: 'validation_error',
-  SERVER: 'server_error',
-  NOT_FOUND: 'not_found_error',
-  UNKNOWN: 'unknown_error'
-};
+// Check if ERROR_TYPES is already defined to avoid redeclaration errors
+if (typeof window.ERROR_TYPES === 'undefined') {
+  const ERROR_TYPES = {
+    NETWORK: 'network_error',
+    AUTH: 'authentication_error',
+    VALIDATION: 'validation_error',
+    SERVER: 'server_error',
+    NOT_FOUND: 'not_found_error',
+    UNKNOWN: 'unknown_error'
+  };
+  
+  // Assign to window immediately
+  window.ERROR_TYPES = ERROR_TYPES;
+}
 
 
 function categorizeError(error) {

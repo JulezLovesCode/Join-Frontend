@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="../styles/signup.css">
   <script src="../scripts/getHTML.js"></script>
   <script src="../scripts/api_config.js"></script>
+  <script src="../scripts/error_handling.js"></script>
 </head>
 <body>
   <div class="brandLogo">
@@ -170,8 +171,8 @@
         const sanitizedUsername = name.replace(/ /g, "_");
 
         // Use API_CONFIG from api_config.js if available, or fallback to direct URL
-        const API_BASE_URL = window.API_CONFIG ? window.API_CONFIG.BASE_URL : 'http://127.0.0.1:8000/';
-        const REGISTER_ENDPOINT = window.API_CONFIG ? window.API_CONFIG.ENDPOINTS.AUTH.REGISTER : 'api/auth/registration/';
+        const API_BASE_URL = window.API_CONFIG.BASE_URL;
+        const REGISTER_ENDPOINT = window.API_CONFIG.ENDPOINTS.AUTH.REGISTER;
 
         const response = await fetch(`${API_BASE_URL}${REGISTER_ENDPOINT}`, {
           method: 'POST',
@@ -204,14 +205,12 @@
           
           
           if (data.token) {
-            localStorage.setItem("token", data.token);
+            localStorage.setItem(API_CONFIG.TOKEN_STORAGE_KEY, data.token);
 
             // Store username from the server response
-            if (data.username) {
-              sessionStorage.setItem("userName", data.username);
-            } else {
-              sessionStorage.setItem("userName", email.split('@')[0]);
-            }
+            const username = data.username || email.split('@')[0];
+            localStorage.setItem(API_CONFIG.USERNAME_STORAGE_KEY, username);
+            sessionStorage.setItem(API_CONFIG.USERNAME_STORAGE_KEY, username);
           }
 
           // No longer storing raw credentials in localStorage
@@ -237,7 +236,8 @@
           successMessage.classList.add('visible');
           
           
-          window.location.href = 'index.html';
+          // Redirect to summary page since user is now logged in
+          window.location.href = 'summary.html';
         } else {
           
           console.error('Registration failed:', data);

@@ -12,7 +12,7 @@ const BOARD_CATEGORIES = {
 let tasks = [];
 
 
-const REFRESH_INTERVAL = 500; 
+const REFRESH_INTERVAL = 10000; // 10 seconds is a more reasonable interval
 
 
 const DEBUG_MODE = true;
@@ -23,50 +23,57 @@ async function initializeDashboard() {
     console.log("%cSummary: Initializing dashboard...", "color: blue; font-weight: bold; font-size: 14px");
   }
   
-  
+  // Setup user info
   setupUserInfo();
   
-  
+  // Initialize count elements to zero
   const countElements = ['toDoCount', 'inProgressCount', 'awaitFeedbackCount', 'doneCount', 'urgentCount', 'allTasks'];
   countElements.forEach(id => {
     const element = document.getElementById(id);
     if (element) element.textContent = '0';
   });
   
-  
+  // Try loading data with retries
   let loadSuccess = false;
   const maxRetries = 3;
   
   for (let i = 0; i < maxRetries && !loadSuccess; i++) {
     try {
-      if (i > 0) console.log(`Retry ${i} loading tasks...`);
-      await loadTasks();
+      if (i > 0) console.log(`Retry ${i} loading summary data...`);
+      await loadTasks(); // This now loads from summary API and updates counts directly
       loadSuccess = true;
     } catch (error) {
-      console.error(`Error loading tasks (attempt ${i+1}/${maxRetries}):`, error);
-      
+      console.error(`Error loading summary data (attempt ${i+1}/${maxRetries}):`, error);
       await new Promise(resolve => setTimeout(resolve, 300));
     }
   }
   
-  
-  updateAllCounts();
+  // Update deadline info based on tasks
   updateDeadlineInfo();
   
-  
-  setInterval(refreshDashboard, REFRESH_INTERVAL);
-  
-  
-  window.addEventListener('storage', function(e) {
-    if (e.key === 'mockTasks') {
-      console.log("%cStorage event: mockTasks changed in another tab!", "color: red; font-weight: bold");
-      loadTasks().then(() => {
-        updateAllCounts();
-        updateDeadlineInfo();
-      });
+  // Set up regular refresh with error handling
+  let consecutiveErrors = 0;
+  const refreshInterval = setInterval(async () => {
+    try {
+      await refreshDashboard();
+      consecutiveErrors = 0; // Reset error counter on success
+    } catch (error) {
+      consecutiveErrors++;
+      console.warn(`Summary refresh error (${consecutiveErrors}):`, error);
+      
+      // If we've had too many consecutive errors, slow down the refresh rate
+      if (consecutiveErrors > 3) {
+        console.warn(`Too many consecutive errors (${consecutiveErrors}), pausing refresh for 2 minutes`);
+        clearInterval(refreshInterval);
+        
+        // Try again after 2 minutes
+        setTimeout(() => {
+          consecutiveErrors = 0;
+          setInterval(refreshDashboard, REFRESH_INTERVAL);
+        }, 120000); // 2 minutes
+      }
     }
-  });
-  
+  }, REFRESH_INTERVAL);
   
   if (DEBUG_MODE) {
     console.log("%cSummary: Dashboard initialization complete", "color: green; font-weight: bold");
@@ -75,92 +82,159 @@ async function initializeDashboard() {
 
 
 async function refreshDashboard() {
+  // Check if we are authenticated before attempting to refresh
+  if (!isAuthenticated()) {
+    console.warn("Not authenticated, skipping dashboard refresh");
+    // If not authenticated and on summary page, redirect to login after a delay
+    if (window.location.pathname.includes('summary')) {
+      const authFailed = sessionStorage.getItem('auth_failed');
+      if (authFailed === 'true') {
+        console.warn("Authentication failed, redirecting to login...");
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 1000);
+        return;
+      }
+    }
+    return;
+  }
   
+  // loadTasks now directly updates count elements from the summary API
   await loadTasks();
-  updateAllCounts();
+  // Still update deadline info as needed
   updateDeadlineInfo();
 }
 
 
 async function loadTasks() {
   if (DEBUG_MODE) {
-    console.log("%cSummary: Loading tasks...", "color: purple; font-weight: bold");
+    console.log("%cSummary: Loading summary data from API...", "color: purple; font-weight: bold");
   }
   
+  // Check if we are authenticated
+  if (!isAuthenticated()) {
+    console.warn("Not authenticated, skipping task loading");
+    return;
+  }
   
   try {
-    const storedTasks = localStorage.getItem('mockTasks');
-    if (storedTasks) {
-      if (DEBUG_MODE) console.log("Found mockTasks in localStorage");
-      
-      try {
-        const parsedTasks = JSON.parse(storedTasks);
-        
-        if (Array.isArray(parsedTasks)) {
-          if (DEBUG_MODE) {
-            console.log("%cSummary: Using tasks from localStorage", "color: green", parsedTasks.length, "items");
-            
-            
-            const todoCount = parsedTasks.filter(t => t.board_category === BOARD_CATEGORIES.TODO).length;
-            const inProgressCount = parsedTasks.filter(t => t.board_category === BOARD_CATEGORIES.IN_PROGRESS).length;
-            const awaitFeedbackCount = parsedTasks.filter(t => t.board_category === BOARD_CATEGORIES.AWAIT_FEEDBACK).length;
-            const doneCount = parsedTasks.filter(t => t.board_category === BOARD_CATEGORIES.DONE).length;
-            
-            console.log("%cTasks by category in localStorage:", "color: blue", {
-              [BOARD_CATEGORIES.TODO]: todoCount,
-              [BOARD_CATEGORIES.IN_PROGRESS]: inProgressCount,
-              [BOARD_CATEGORIES.AWAIT_FEEDBACK]: awaitFeedbackCount,
-              [BOARD_CATEGORIES.DONE]: doneCount,
-              total: parsedTasks.length
-            });
-            
-            
-            if (parsedTasks.length > 0) {
-              console.log("First task:", parsedTasks[0]);
-            }
-          }
-          
-          
-          tasks = parsedTasks;
-          return;
-        } else {
-          console.warn("mockTasks is not an array:", parsedTasks);
-        }
-      } catch (parseError) {
-        console.error("Error parsing mockTasks JSON:", parseError);
+    // Always fetch fresh data for summary page
+    // Reset any throttling to ensure we get the latest data
+    sessionStorage.removeItem('last_summary_api_call');
+    const now = new Date().getTime();
+    
+    // Force a direct API call to get the most current data
+    console.log("%cForcing fresh API call to summary endpoint", "color: orange; font-weight: bold");
+    
+    // Update the last call time
+    sessionStorage.setItem('last_summary_api_call', now.toString());
+    
+    // Fetch summary data directly from the summary API endpoint with cache-busting
+    const cacheBuster = `?_=${now}`;
+    const summaryData = await apiGet(`api/summary/${cacheBuster}`);
+    
+    if (summaryData && typeof summaryData === 'object') {
+      if (DEBUG_MODE) {
+        console.log("%cSummary: Received summary data from API", "color: green", summaryData);
       }
+      
+      // Update the summary data
+      const todoCount = summaryData["to-do"] || 0;
+      const inProgressCount = summaryData["in-progress"] || 0;
+      const awaitFeedbackCount = summaryData["await-feedback"] || 0;
+      const doneCount = summaryData["done"] || 0;
+      const urgentCount = summaryData["urgent"] || 0;
+      const totalCount = summaryData["total-tasks"] || 0;
+      
+      // Debug output before updating UI
+      console.log("%cTask counts from server:", "color: green; font-weight: bold", {
+        "To-Do": todoCount,
+        "In Progress": inProgressCount,
+        "Await Feedback": awaitFeedbackCount,
+        "Done": doneCount,
+        "Urgent": urgentCount,
+        "Total": totalCount
+      });
+      
+      // Update count elements directly
+      updateCountElement('toDoCount', todoCount);
+      updateCountElement('inProgressCount', inProgressCount);
+      updateCountElement('awaitFeedbackCount', awaitFeedbackCount);
+      updateCountElement('doneCount', doneCount);
+      updateCountElement('urgentCount', urgentCount);
+      updateCountElement('allTasks', totalCount);
+      
+      if (DEBUG_MODE) {
+        console.log("%cUpdated summary counts from API:", "color: blue", {
+          "to-do": todoCount,
+          "in-progress": inProgressCount,
+          "await-feedback": awaitFeedbackCount,
+          "done": doneCount,
+          "urgent": urgentCount,
+          "total": totalCount
+        });
+      }
+      
+      // Always fetch tasks for other functionality to ensure we have the latest data
+      try {
+        const tasksResponse = await apiGet(`api/tasks/${cacheBuster}`);
+        if (tasksResponse && Array.isArray(tasksResponse)) {
+          tasks = tasksResponse;
+          console.log("%cLoaded tasks for deadline calculation:", "color: blue", tasks.length);
+        } else {
+          console.warn("Invalid tasks API response format:", tasksResponse);
+          tasks = [];
+        }
+      } catch (taskError) {
+        console.error("Tasks API request failed:", taskError);
+        // Don't throw here to keep the summary data we already loaded
+      }
+      
+      return;
     } else {
-      if (DEBUG_MODE) console.log("No mockTasks found in localStorage");
+      console.warn("Invalid summary data format:", summaryData);
+      // Fallback to old method if summary endpoint fails
+      await fetchTasksAndUpdateCounts();
     }
   } catch (error) {
-    console.error("Error accessing localStorage:", error);
+    console.error("Summary API request failed:", error);
+    
+    // Don't attempt fallback if we're having authentication issues
+    if (error.status !== 401 && error.status !== 403) {
+      // Fallback to old method if summary endpoint fails
+      await fetchTasksAndUpdateCounts();
+    }
+    
+    if (typeof showErrorNotification === 'function') {
+      showErrorNotification("Could not load summary data from the server. Please try again later.");
+    }
+    
+    // Re-throw to allow proper error handling in the caller
+    throw error;
   }
-  
-  
-  if (DEBUG_MODE) console.log("Falling back to API...");
-  
+}
+
+// Fallback method to fetch tasks and calculate counts
+async function fetchTasksAndUpdateCounts() {
   try {
     const response = await apiGet('api/tasks/');
+    
     if (response && Array.isArray(response)) {
-      if (DEBUG_MODE) console.log("%cSummary: Using tasks from API", "color: green", response.length, "items");
       tasks = response;
-      
-      
-      try {
-        localStorage.setItem('mockTasks', JSON.stringify(response));
-        if (DEBUG_MODE) console.log("Saved API tasks to localStorage");
-      } catch (saveError) {
-        console.error("Error saving to localStorage:", saveError);
-      }
+      updateAllCounts(); // Calculate and update counts from tasks
     } else {
-      console.warn("Invalid API response format");
-      
+      console.warn("Invalid tasks API response format:", response);
       tasks = [];
+      // Reset all counts to zero
+      const countElements = ['toDoCount', 'inProgressCount', 'awaitFeedbackCount', 'doneCount', 'urgentCount', 'allTasks'];
+      countElements.forEach(id => updateCountElement(id, 0));
     }
   } catch (error) {
-    console.error("API request failed:", error);
-    
+    console.error("Tasks API request failed:", error);
     tasks = [];
+    // Reset all counts to zero
+    const countElements = ['toDoCount', 'inProgressCount', 'awaitFeedbackCount', 'doneCount', 'urgentCount', 'allTasks'];
+    countElements.forEach(id => updateCountElement(id, 0));
   }
 }
 
@@ -482,13 +556,12 @@ function configureInitialState() {
   const contentContainer = document.querySelector('.summary-card-container');
   
   if (window.innerWidth >= 800) {
-    
-    localStorage.setItem('greetingShown', 'true');
+    // Show content immediately for desktop
     if (contentContainer) contentContainer.classList.add('visible');
   } else {
-    
-    if (!localStorage.getItem('greetingShown')) {
-      localStorage.setItem('greetingShown', 'true');
+    // For mobile, we'll use sessionStorage to show welcome only once per session
+    if (!sessionStorage.getItem('greetingShown')) {
+      sessionStorage.setItem('greetingShown', 'true');
       showWelcomeAnimation();
     } else {
       if (contentContainer) contentContainer.classList.add('visible');

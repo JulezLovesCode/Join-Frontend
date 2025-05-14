@@ -138,7 +138,10 @@ function prepareRegistrationPayload(userData, formattedUsername) {
 
 
 async function sendRegistrationRequest(payload) {
-  return fetch('http://127.0.0.1:8000/api/auth/registration/', {
+  // Use the API_CONFIG constants to ensure consistency
+  const url = buildApiUrl(API_CONFIG.ENDPOINTS.AUTH.REGISTER);
+  
+  return fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -151,6 +154,8 @@ async function sendRegistrationRequest(payload) {
 function handleSuccessfulRegistration(responseData) {
   if (responseData.token) {
     storeUserSession(responseData);
+  } else {
+    console.error('No token received from registration');
   }
 
   showRegistrationSuccess();
@@ -158,12 +163,13 @@ function handleSuccessfulRegistration(responseData) {
 
 
 function storeUserSession(responseData) {
-  localStorage.setItem('token', responseData.token);
-  localStorage.setItem('userProfile', JSON.stringify(responseData.user || {}));
-
-  const username =
-    (responseData.user && responseData.user.username) || responseData.email;
-  sessionStorage.setItem('userName', username);
+  // Store token in localStorage using the consistent key from API_CONFIG
+  localStorage.setItem(API_CONFIG.TOKEN_STORAGE_KEY, responseData.token);
+  
+  // Store username in both localStorage and sessionStorage for consistency
+  const username = responseData.username || responseData.email;
+  localStorage.setItem(API_CONFIG.USERNAME_STORAGE_KEY, username);
+  sessionStorage.setItem(API_CONFIG.USERNAME_STORAGE_KEY, username);
 }
 
 
@@ -179,16 +185,16 @@ function showRegistrationSuccess() {
 
   setTimeout(function () {
     notificationElement.classList.remove('show');
-    clearUserSessionData();
-    returnToHomepage();
+    // Redirect straight to summary page since user is now logged in
+    window.location.href = 'summary.html';
   }, 2000);
 }
 
 
 function clearUserSessionData() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('userProfile');
-  sessionStorage.removeItem('userName');
+  // This function is no longer needed as we want to keep the user logged in
+  // after registration. Don't clear auth data here.
+  return;
 }
 
 

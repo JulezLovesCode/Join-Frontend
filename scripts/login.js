@@ -55,30 +55,22 @@ function navigateToRegistration() {
 
 async function initiateGuestSession() {
   try {
-    
+    // Call the guest login endpoint
     const guestResponse = await apiPost(API_CONFIG.ENDPOINTS.AUTH.GUEST_LOGIN, {}, false);
     
-    if (guestResponse && guestResponse.token) {
-      
-      handleAuthentication({
-        token: guestResponse.token,
-        username: 'Guest'
-      });
-    } else {
-      
+    if (guestResponse && guestResponse.guest_id) {
+      // Store guest ID in sessionStorage for guest access
+      sessionStorage.setItem(API_CONFIG.GUEST_ID_KEY, guestResponse.guest_id);
       sessionStorage.setItem(API_CONFIG.USERNAME_STORAGE_KEY, 'Guest');
+      
+      // Redirect to summary page
+      window.location.href = 'summary.html';
+    } else {
+      throw new Error("Invalid guest login response");
     }
-    
-    
-    localStorage.removeItem('greetingShown');
-    
-    
-    window.location.href = 'summary.html';
   } catch (error) {
-    console.warn('Guest login API failed, using local guest session:', error);
-    sessionStorage.setItem(API_CONFIG.USERNAME_STORAGE_KEY, 'Guest');
-    localStorage.removeItem('greetingShown');
-    window.location.href = 'summary.html';
+    console.error('Guest login failed:', error);
+    showErrorNotification("Could not connect to the server. Please try again later.");
   }
 }
 
@@ -192,34 +184,32 @@ function handleLoginFailure(error) {
 
 
 function completeSuccessfulLogin(userIdentifier, displayName) {
+  // Store email only if remember me is checked
+  if (localStorage.getItem('saveCredentials') === 'true') {
+    localStorage.setItem('userEmail', userIdentifier);
+  }
   
-  localStorage.setItem('userEmail', userIdentifier);
-  localStorage.removeItem('greetingShown');
-  
-  
+  // Navigate to the dashboard
   window.location.href = 'summary.html';
 }
 
 
 async function terminateUserSession() {
   try {
-    
+    // If user is authenticated, call the logout endpoint
     if (isAuthenticated()) {
       await apiPost(API_CONFIG.ENDPOINTS.AUTH.LOGOUT, {});
     }
   } catch (error) {
     console.warn('Logout API call failed:', error);
   } finally {
-    
+    // Clear authentication tokens
     clearAuthentication();
     
-    
+    // Clear session data
     sessionStorage.clear();
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('greetingShown');
-    localStorage.removeItem('saveCredentials');
     
-    
+    // Clear form fields if they exist
     const formElements = [
       document.getElementById('loginEmail'),
       document.getElementById('loginPassword'),
@@ -228,7 +218,7 @@ async function terminateUserSession() {
       if (element) element.value = '';
     });
     
-    
+    // Redirect to login page
     window.location.href = 'index.html';
   }
 }

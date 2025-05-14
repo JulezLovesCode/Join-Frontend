@@ -180,18 +180,18 @@ async function boardInit() {
   showLoadingIndicator();
   
   try {
+    // Share contacts array globally so it can be accessed by other functions
+    window.contactsArray = await fetchContacts();
     
-    await Promise.all([
-      fetchContacts(),
-      fetchTasks()
-    ]);
+    // Fetch tasks from API
+    await fetchTasks();
     
-    
+    // Create board UI
     createTaskOnBoard();
     checkAndAddNoTask();
     generateInitials();
     
-    
+    // Add click listeners to contacts
     setTimeout(() => {
       addContactClickListeners();
     }, 500);
@@ -201,12 +201,12 @@ async function boardInit() {
     console.error("Error initializing board:", error);
     hideLoadingIndicator();
     
-    
+    // Show error notification
     if (typeof showErrorNotification === 'function') {
-      showErrorNotification("There was an error loading the board. Some features may not work correctly.");
+      showErrorNotification("Could not connect to the server. Please try again later.");
     } else {
-      console.error("There was an error loading the board. Some features may not work correctly.");
-      alert("There was an error loading the board. Some features may not work correctly.");
+      console.error("Could not connect to the server. Please try again later.");
+      alert("Could not connect to the server. Please try again later.");
     }
   }
 }
@@ -256,21 +256,8 @@ function hideLoadingIndicator() {
 
 
 async function fetchContacts() {
-  
-  if (sessionStorage.getItem('auth_failed') === 'true' || !isAuthenticated()) {
-    console.log("Authentication previously failed or no token, using mock contacts");
-    contactsArray = getMockContacts();
-    
-    
-    contactsArray.forEach((contact, index) => {
-      boardContactSelections[index] = false;
-    });
-    
-    return contactsArray;
-  }
-  
   try {
-    
+    // Get contacts from the API
     const response = await apiGet(API_CONFIG.ENDPOINTS.CONTACTS);
     
     if (response && Array.isArray(response)) {
@@ -280,98 +267,58 @@ async function fetchContacts() {
     } else {
       throw new Error("Invalid contacts data format");
     }
+    
+    console.log("Contacts from API:", contactsArray);
+    
+    // Initialize contact selections
+    contactsArray.forEach((contact, index) => {
+      boardContactSelections[index] = false;
+    });
+    
+    return contactsArray;
   } catch (error) {
-    
-    const errorInfo = handleApiError(error);
-    console.log("Using mock contacts due to API error:", errorInfo.type);
-    
-    
-    contactsArray = getMockContacts();
+    console.error("Error fetching contacts:", error);
+    showErrorNotification("Could not load contacts from the server. Please try again later.");
+    throw error;
   }
-  
-  
-  contactsArray.forEach((contact, index) => {
-    boardContactSelections[index] = false;
-  });
-  
-  return contactsArray;
 }
 
 
 async function fetchTasks() {
-  
-  if (sessionStorage.getItem('auth_failed') === 'true' || !isAuthenticated()) {
-    console.log("Authentication previously failed or no token, using mock tasks");
-    useAndProcessMockTasks();
-    return;
-  }
-  
   try {
-    
+    // Get tasks from the API
     const response = await apiGet(API_CONFIG.ENDPOINTS.TASKS);
-    
     
     if (!response) {
       throw new Error("No data received from API");
     }
     
+    console.log("Tasks from API:", response);
     
+    // Process the tasks from the API response
     tasksData = response;
     tasksArray = Array.isArray(response) ? response : Object.values(response);
     tasksKeys = Object.keys(tasksData);
     
+    return tasksArray;
   } catch (error) {
-    
-    const errorInfo = handleApiError(error);
-    
-    
-    if (errorInfo.type === ERROR_TYPES.AUTH) {
-      showErrorNotification("Your session has expired. Using sample tasks for demonstration.");
-    } else if (errorInfo.type === ERROR_TYPES.NETWORK) {
-      showErrorNotification("Could not connect to server. Using sample tasks for demonstration.");
-    }
-    
-    useAndProcessMockTasks();
+    console.error("Error fetching tasks:", error);
+    showErrorNotification("Could not load tasks from the server. Please try again later.");
+    throw error;
   }
 }
 
 
+// This function is no longer needed as we use the API exclusively
 function useAndProcessMockTasks() {
-  tasksArray = getMockTasks();
-  tasksData = tasksArray.reduce((obj, task, index) => {
-    obj[index] = task;
-    return obj;
-  }, {});
-  tasksKeys = Object.keys(tasksData);
+  // Intentionally empty - API is used instead
 }
 
 
+// This function is no longer needed as we use the API exclusively
 function getMockContacts() {
-  
-  const mockContactsJson = localStorage.getItem('mockContacts');
-  if (mockContactsJson) {
-    try {
-      const mockContacts = JSON.parse(mockContactsJson);
-      if (Array.isArray(mockContacts) && mockContacts.length > 0) {
-        console.log("Using user-created contacts from localStorage:", mockContacts);
-        return mockContacts;
-      }
-    } catch (error) {
-      console.error("Error parsing mock contacts:", error);
-    }
-  }
-  
-  
-  const defaultContacts = [
-    { id: 1, name: "Martina Bohm", email: "martina@example.com", color: "#FF7A00" },
-    { id: 2, name: "Sas Sas", email: "sas@example.com", color: "#FF5EB3" },
-    { id: 3, name: "Tobias Mal", email: "tobias@example.com", color: "#6E52FF" }
-  ];
-  
-  
-  localStorage.setItem('mockContacts', JSON.stringify(defaultContacts));
-  
-  return defaultContacts;
+  // Intentionally empty - API is used instead
+  return [];
 }
 
 
@@ -399,70 +346,10 @@ function toggleContactSelection(event) {
 }
 
 
+// This function is no longer needed as we use the API exclusively
 function getMockTasks() {
-  
-  const defaultMockTasks = [
-    {
-      id: 1,
-      title: "Website Redesign",
-      description: "Update the company website with new design",
-      board_category: "to-do",
-      task_category: "User Story",
-      priority: "medium",
-      contacts: {
-        1: { name: "John Doe", email: "john@example.com" },
-        2: { name: "Jane Smith", email: "jane@example.com" }
-      },
-      subtasks: {
-        subtask1: { title: "Design homepage", completed: false },
-        subtask2: { title: "Design about page", completed: true }
-      }
-    },
-    {
-      id: 2,
-      title: "API Integration",
-      description: "Integrate payment gateway API",
-      board_category: "in-progress",
-      task_category: "Technical Task",
-      priority: "urgent",
-      contacts: {
-        3: { name: "Bob Johnson", email: "bob@example.com" }
-      },
-      subtasks: {
-        subtask1: { title: "Research API docs", completed: true },
-        subtask2: { title: "Implement API calls", completed: false }
-      }
-    },
-    {
-      id: 3,
-      title: "User Testing",
-      description: "Conduct user testing for new features",
-      board_category: "await-feedback",
-      task_category: "User Story",
-      priority: "low",
-      contacts: {
-        1: { name: "John Doe", email: "john@example.com" },
-        4: { name: "Alice Brown", email: "alice@example.com" }
-      },
-      subtasks: {}
-    }
-  ];
-
-  
-  try {
-    const savedMockTasks = localStorage.getItem('mockTasks');
-    if (savedMockTasks) {
-      return JSON.parse(savedMockTasks);
-    }
-  } catch (error) {
-    console.error("Error retrieving mock tasks from localStorage:", error);
-    
-    localStorage.removeItem('mockTasks');
-  }
-
-  
-  localStorage.setItem('mockTasks', JSON.stringify(defaultMockTasks));
-  return defaultMockTasks;
+  // Intentionally empty - API is used instead
+  return [];
 }
 
 
@@ -478,16 +365,27 @@ function createTaskOnBoard() {
 
   clearBoards(boardIds);
 
-  tasksArray.forEach((task, key) => {
-    let taskId = task.id || task._id || task.task_id || "undefined";
-    let contactsHTML = generateContactsHTML(task.contacts);
+  tasksArray.forEach((task, index) => {
+    let taskId = task.id || "undefined";
+    
+    // Handle contacts - API may return them in different formats
+    let taskContacts = [];
+    if (task.assigned_members && Array.isArray(task.assigned_members)) {
+      taskContacts = task.assigned_members;
+    } else if (task.contacts && Array.isArray(task.contacts)) {
+      taskContacts = task.contacts;
+    } else if (task.member_assignments && Array.isArray(task.member_assignments)) {
+      taskContacts = task.member_assignments;
+    }
+    
+    let contactsHTML = generateContactsHTML(taskContacts);
     let boardId = boardIds[task.board_category] || selectedBoardCategory;
     let content = document.getElementById(boardId);
     let prioSrc = handlePrio(task.priority);
     let categoryClass = task.task_category && task.task_category.toLowerCase().includes("user") ? "user-story" : "technical-task";
 
     if (content) {
-      content.innerHTML += generateTaskOnBoardHTML(key, taskId, categoryClass, task, contactsHTML, prioSrc);
+      content.innerHTML += generateTaskOnBoardHTML(index, taskId, categoryClass, task, contactsHTML, prioSrc);
     }
   });
 }
@@ -577,9 +475,20 @@ function clearBoards(boardIds) {
 
 
 function generateContactsHTML(contacts) {
-  contacts = contacts || {};
-  const contactCount = Object.keys(contacts).length;
-  const displayedContacts = getDisplayedContactsHTML(contacts);
+  // Initialize or convert to empty array if undefined/null
+  let contactsArray = [];
+  
+  if (contacts) {
+    // Handle different contact formats from API
+    if (Array.isArray(contacts)) {
+      contactsArray = contacts;
+    } else if (typeof contacts === 'object') {
+      contactsArray = Object.values(contacts);
+    }
+  }
+  
+  const contactCount = contactsArray.length;
+  const displayedContacts = getDisplayedContactsHTML(contactsArray);
   const remainingContacts = getRemainingContactsHTML(contactCount);
 
   return displayedContacts + remainingContacts;
@@ -590,13 +499,33 @@ function getDisplayedContactsHTML(contacts) {
   let contactsHTML = "";
   let displayedContacts = 0;
 
-  for (let key in contacts) {
-    if (contacts.hasOwnProperty(key) && displayedContacts < 4) {
-      const contact = contacts[key];
-      contactsHTML += generateContact(contact);
-      displayedContacts++;
-    } else if (displayedContacts >= 4) {
-      break;
+  // Handle array format from API
+  if (Array.isArray(contacts)) {
+    for (let i = 0; i < contacts.length && displayedContacts < 4; i++) {
+      let contact = contacts[i];
+      
+      // If contact is just an ID number or reference, find the full contact info
+      if (typeof contact === 'number' || (contact && !contact.name)) {
+        const contactId = typeof contact === 'object' ? contact.id : contact;
+        contact = window.contactsArray.find(c => c.id === contactId);
+      }
+      
+      if (contact) {
+        contactsHTML += generateContact(contact);
+        displayedContacts++;
+      }
+    }
+  } 
+  // Handle object format with keys
+  else if (typeof contacts === 'object') {
+    for (let key in contacts) {
+      if (contacts.hasOwnProperty(key) && displayedContacts < 4) {
+        const contact = contacts[key];
+        contactsHTML += generateContact(contact);
+        displayedContacts++;
+      } else if (displayedContacts >= 4) {
+        break;
+      }
     }
   }
 
@@ -762,46 +691,35 @@ async function moveTo(category, taskId) {
     return;
   }
 
-  
+  // Find the task to update
   const taskToUpdate = tasksArray.find(t => t.id == taskId);
   if (taskToUpdate) {
     const oldCategory = taskToUpdate.board_category;
     taskToUpdate.board_category = category.toLowerCase();
     
-    
+    // Optimistically update UI
     createTaskOnBoard();
     
-    
-    if (sessionStorage.getItem('auth_failed') === 'true' || !isAuthenticated()) {
-      console.log("Using mock data, updating localStorage");
-      
-      
-      localStorage.setItem('mockTasks', JSON.stringify(tasksArray));
-      
-      return; 
-    }
-    
     try {
-      
+      // Update task on the server
       await apiPatch(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`, {
         board_category: category.toLowerCase()
       });
       
-      
+      // Refresh data from server
       await fetchTasks();
       createTaskOnBoard();
       checkAndAddNoTask();
     } catch (error) {
+      // Revert UI if update fails
+      console.error("Failed to update task:", error);
+      showErrorNotification("Failed to update task. Please try again.");
       
-      handleApiError(error, () => {
-        showErrorNotification("Failed to update task. Please try again.");
-        
-        
-        if (taskToUpdate) {
-          taskToUpdate.board_category = oldCategory;
-          createTaskOnBoard();
-        }
-      });
+      // Revert the local state
+      if (taskToUpdate) {
+        taskToUpdate.board_category = oldCategory;
+        createTaskOnBoard();
+      }
     }
   } else {
     console.error(`Task with ID ${taskId} not found`);
@@ -956,17 +874,7 @@ async function updateSubtaskStatus(taskId, subtaskKey, completed) {
   }
   
   
-  if (sessionStorage.getItem('auth_failed') === 'true' || !isAuthenticated()) {
-    console.log("Using mock data, updating subtask in localStorage");
-    
-    
-    localStorage.setItem('mockTasks', JSON.stringify(tasksArray));
-    
-    
-    createTaskOnBoard();
-    
-    return; 
-  }
+  // Always use the API - we no longer support localStorage fallback
   
   try {
     
@@ -1474,10 +1382,8 @@ function saveEditedTask(taskId) {
   task.subtasks = updatedSubtasks;
   
   
-  if (sessionStorage.getItem('auth_failed') === 'true' || !isAuthenticated()) {
-    localStorage.setItem('mockTasks', JSON.stringify(tasksArray));
-  } else {
-    
+  try {
+    // Always use the API
     apiPatch(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`, {
       title,
       description,
@@ -1485,9 +1391,10 @@ function saveEditedTask(taskId) {
       priority,
       contacts: updatedContacts,
       subtasks: updatedSubtasks
-    }).catch(err => {
-      console.log("API update failed, using local data only:", err);
     });
+  } catch (err) {
+    console.error("API update failed:", err);
+    showErrorNotification("Could not save task changes. Please try again later.");
   }
   
   
@@ -1531,28 +1438,7 @@ async function deleteTask(taskId) {
     }
     
     
-    if (sessionStorage.getItem('auth_failed') === 'true' || !isAuthenticated()) {
-      console.log("Using mock data, skipping server delete");
-      
-      
-      for (let key in tasksData) {
-        if (tasksData[key].id == taskId) {
-          delete tasksData[key];
-          break;
-        }
-      }
-      
-      
-      tasksKeys = Object.keys(tasksData);
-      
-      
-      localStorage.setItem('mockTasks', JSON.stringify(tasksArray));
-      
-      
-      showSuccessNotification("Task deleted successfully (demo mode)");
-      hideLoadingIndicator();
-      return;
-    }
+    // Always use the API - no localStorage fallback
     
     
     await apiDelete(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`);

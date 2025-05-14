@@ -10,9 +10,23 @@
   <link rel="stylesheet" href="../styles/desktop_template.css">
   <link rel="stylesheet" href="../styles/contacts.css">
   <link rel="stylesheet" href="../styles/mobile_template.css">
+  
+  <!-- Load core scripts with defer attribute to ensure they load before DOMContentLoaded -->
+  <script src="../scripts/api_config.js" defer></script>
+  <script src="../scripts/api.js" defer></script>
+  <script src="../scripts/error_handling.js" defer></script>
+  <script src="../scripts/getHTML.js" defer></script>
+  <script src="../script.js" defer></script>
+  
+  <!-- Load main contacts script last with defer -->
+  <script src="../scripts/contacts.js" defer></script>
+  
+  <!-- Load the modern initialization script -->
+  <script src="../scripts/contacts_init.js" defer></script>
+  <script src="../scripts/contacts_helper.js" defer></script>
 </head>
 
-<body onload="initializeContactsView(); initializeUserProfile()">
+<body>
 
   <header class="appHeader">
     <div class="headerWrapper">
@@ -61,12 +75,12 @@
   </aside>
 
   <div class="contacts-library" id="contacts-panel">
-    <div class="responsive-add-contact" onclick="openContactForm()">
-      <img src="../assets/images/person_add.svg" alt="">
+    <div class="responsive-add-contact" id="responsive-add-contact-btn" role="button" tabindex="0" aria-label="Add new contact on mobile">
+      <img src="../assets/images/person_add.svg" alt="Add contact icon">
     </div>
-    <div class="button-add-contact" onclick="openContactForm()">
+    <div class="button-add-contact" id="add-contact-btn" role="button" tabindex="0" aria-label="Add new contact">
       Add new contact
-      <img src="../assets/images/person_add.svg" alt="">
+      <img src="../assets/images/person_add.svg" alt="Add contact icon">
     </div>
     <div id="contacts-list" class="contacts-list">
       
@@ -89,96 +103,101 @@
   </div>
 
   
-  <div class="add-contact-layer d-none" id="contact-form-overlay">
-    <div class="add-contact-inner-layer" id="contact-form-panel">
-      <div class="add-contact-left" onclick="closeContactForm()">
-        <img class="close-symbol" src="../assets/images/close-white.svg" alt="add-contact-layer-close">
-        <img src="../assets/images/logo.svg" alt="join-logo">
-        <h1>Add Contact</h1>
-        <h2>Tasks are better with a team</h2>
-        <div class="add-layer-line"></div>
+  <div id="mobileWorkContactContainer" style="display: none; z-index: 9999;" onclick="dontClose(event)">
+    <div class="addContactLogoContainer">
+      <div class="closeMobile" id="closeMobileBtn">
+        <img src="../assets/images/close-white.svg" alt="">
       </div>
-      <div class="add-contact-right">
-        <div class="add-contact-layer-close" onclick="closeContactForm()">
-          <img src="../assets/images/add-contact-close.svg" alt="add-contact-layer-close">
+      <div>
+        <img class="contactLogo" src="../assets/images/logo.svg" alt="">
+        <h1>Add contact</h1>
+        <span>Tasks are better with a team!</span>
+        <div class="vector5"></div>
+        <div class="contactLogoMirror"></div>
+      </div>
+    </div>
+    <div class="addContactInputContainer">
+      <div class="emptyMonogram">
+        <img src="../assets/images/add-contact-person.svg" alt="">
+      </div>
+      <div class="addContactInputContainer2">
+        <div class="close" id="closeContactBtn">
+          <img src="../assets/images/close.svg" alt="">
         </div>
-        <div class="add-contact-data">
-          <div class="default-contact">
-            <img src="../assets/images/add-contact-person.svg" alt="">
+        <form id="add-contact-form" class="form-input">
+          <div class="input-container">
+            <input id="name" type="text" required pattern="^[A-Za-zÀ-ÖØ-öø-ÿ]+(?: [A-Za-zÀ-ÖØ-öø-ÿ]+)*$" placeholder="Name">
+            <span class="icon"><img src="../assets/images/add-contact-form-person.svg"></span>   
+            <span class="error-msg visible"></span>
           </div>
-          <div class="add-contact-form">
-            <form onsubmit="createContact(); return false">
-              <div class="input-container">
-                <input placeholder="Name" id="contact-name-input" required type="text" pattern="^[A-Za-z]+ [A-Za-z]+.*$"
-                  title="Please enter at least a first name and a last name">
-                <img class="icon" src="../assets/images/add-contact-form-person.svg" alt="user icon">
-              </div>
-              <div class="input-container">
-                <input placeholder="Email" id="contact-email-input" required type="email">
-                <img class="icon" src="../assets/images/add-contact-form-mail.svg" alt="email icon">
-              </div>
-              <div class="input-container">
-                <input placeholder="Phone" id="contact-phone-input" required type="tel"
-                  pattern="^(\+49\s?\(?0?\)?\s?\d{3}\s?\d{1,}|^\d{4}\s?\d{1,})$"
-                  title="Please enter a valid phone number in one of the following formats: 01626963474, 0162 6963474, +49 162 6963474, +49 (0)162 6963474">
-                <img class="icon" src="../assets/images/add-contact-form-phone.svg" alt="phone icon">
-              </div>
-              <div class="button-group">
-                <button class="button-bright" type="button" onclick="closeContactForm()">
-                  Cancel <img class="contact-icon" src="../assets/images/add-contact-close.svg" alt="">
-                </button>
-                <button class="button-dark button-dark-contact" type="submit">
-                  Create contact <img src="../assets/images/add-contact-check.svg" alt="">
-                </button>
-              </div>
-            </form>
+          <div class="input-container email">
+            <input id="email" type="email" required pattern="(?![._\-])(?!.*\.\.)[\-A-Za-z0-9_]*[\-A-Za-z0-9_\.]*[A-Za-z0-9]+@[\-A-Za-z0-9][\-A-Za-z0-9_]+\.[A-Za-z]{2,4}" title="Format: user.name@domain.com" placeholder="Email">
+            <span class="icon"><img src="../assets/images/add-contact-form-mail.svg"></span>
+            <span class="error-msg visible"></span>
           </div>
-        </div>
+          <div class="input-container">
+            <input id="phone" type="tel" required pattern="[0-9+]*" maxlength="20" placeholder="Phone">
+            <span class="icon"><img src="../assets/images/add-contact-form-phone.svg"></span>
+            <span class="error-msg visible"></span>
+          </div>
+          <div class="buttons">
+            <div class="cancelButton" id="cancelContactBtn">
+              <span>Cancel </span>
+              <div class="cancelSVGContainer">
+              </div>
+            </div>
+            <button class="createContactButton" type="submit">
+              <span>Create contact</span>
+              <div class="checkSVGContainer">
+              </div>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 
   
-  <div class="add-contact-layer d-none" id="edit-contact-overlay">
+  <div class="add-contact-layer" id="edit-contact-overlay" style="display: none;">
     <div class="add-contact-inner-layer" id="edit-contact-panel">
-      <div class="add-contact-left" onclick="closeEditContactForm()">
-        <img class="close-symbol" src="../assets/images/close-white.svg" alt="add-contact-layer-close">
-        <img src="../assets/images/logo.svg" alt="join-logo">
+      <div class="add-contact-left">
+        <img class="close-symbol edit-close-symbol" src="../assets/images/close-white.svg" alt="Close form">
+        <img src="../assets/images/logo.svg" alt="Join logo">
         <h1>Edit Contact</h1>
         <div class="add-layer-line"></div>
       </div>
       <div class="add-contact-right">
-        <div class="add-contact-layer-close" onclick="closeEditContactForm()">
-          <img src="../assets/images/add-contact-close.svg" alt="add-contact-layer-close">
+        <div class="add-contact-layer-close edit-close-btn">
+          <img src="../assets/images/add-contact-close.svg" alt="Close form">
         </div>
         <div class="add-contact-data">
           <div class="default-contact">
-            <img src="../assets/images/add-contact-person.svg" alt="">
+            <img src="../assets/images/add-contact-person.svg" alt="User profile icon">
           </div>
           <div class="add-contact-form">
-            <form onsubmit="updateContact(); return false">
+            <form id="edit-contact-form">
               <input type="hidden" id="edit-contact-id">
               <div class="input-container">
                 <input placeholder="Name" id="edit-contact-name" required type="text" pattern="^[A-Za-z]+ [A-Za-z]+.*$"
                   title="Please enter at least a first name and a last name">
-                <img class="icon" src="../assets/images/add-contact-form-person.svg" alt="user icon">
+                <img class="icon" src="../assets/images/add-contact-form-person.svg" alt="User icon">
               </div>
               <div class="input-container">
                 <input placeholder="Email" id="edit-contact-email" required type="email">
-                <img class="icon" src="../assets/images/add-contact-form-mail.svg" alt="email icon">
+                <img class="icon" src="../assets/images/add-contact-form-mail.svg" alt="Email icon">
               </div>
               <div class="input-container">
                 <input placeholder="Phone" id="edit-contact-phone" required type="tel"
                   pattern="^(\+49\s?\(?0?\)?\s?\d{3}\s?\d{1,}|^\d{4}\s?\d{1,})$"
                   title="Please enter a valid phone number in one of the following formats: 01626963474, 0162 6963474, +49 162 6963474, +49 (0)162 6963474">
-                <img class="icon" src="../assets/images/add-contact-form-phone.svg" alt="phone icon">
+                <img class="icon" src="../assets/images/add-contact-form-phone.svg" alt="Phone icon">
               </div>
               <div class="button-group">
-                <button class="button-bright" type="button" onclick="closeEditContactForm()">
-                  Cancel <img class="contact-icon" src="../assets/images/add-contact-close.svg" alt="">
+                <button class="button-bright" type="button" id="cancel-edit-btn">
+                  Cancel <img class="contact-icon" src="../assets/images/add-contact-close.svg" alt="Cancel icon">
                 </button>
                 <button class="button-dark button-dark-contact" type="submit">
-                  Save<img src="../assets/images/add-contact-check.svg" alt="">
+                  Save<img src="../assets/images/add-contact-check.svg" alt="Save icon">
                 </button>
               </div>
             </form>
@@ -188,10 +207,8 @@
     </div>
   </div>
 
-  <script src="../scripts/api.js"></script>
-  <script src="../scripts/getHTML.js"></script>
-  <script src="../scripts/contacts.js"></script>
-  <script src="../script.js"></script>
+  <!-- Scripts are now loaded in the head with defer attribute to ensure proper loading order -->
+  <!-- Empty here - this was moved to the head section -->
 </body>
 
 </html>
