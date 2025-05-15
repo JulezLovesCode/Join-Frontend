@@ -4,6 +4,7 @@ body {
   margin: 0;
   height: 100vh;
   overflow: hidden;
+  width: 100vw; /* Ensure body takes full width */
 }
 
 .main-content {
@@ -16,7 +17,8 @@ body {
   flex: 1;
   padding: 0 40px;
   background-color: #F6F7F8;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden; /* Hide horizontal scrollbar */
   margin-left: 232px; 
   margin-top: 0; 
   margin-bottom: 0; 
@@ -103,8 +105,8 @@ body {
   padding-top: 15px;
   width: 100%;
   max-width: 1200px;
-  flex-wrap: nowrap;
-  overflow-x: auto; 
+  flex-wrap: wrap; /* Allow wrapping instead of horizontal scroll */
+  /* overflow-x removed to prevent horizontal scrolling */
 }
 
 .column, .board-split {
@@ -145,8 +147,31 @@ body {
   flex-direction: column;
   gap: 16px;
   overflow-y: auto; 
+  overflow-x: hidden; /* Hide horizontal scrollbar */
   padding: 4px; 
   border-radius: 8px;
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(0,0,0,0.2) transparent; /* Firefox */
+}
+
+/* Hide scrollbars for Webkit browsers (Chrome, Safari) */
+.taskList::-webkit-scrollbar, .task-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.taskList::-webkit-scrollbar-track, .task-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.taskList::-webkit-scrollbar-thumb, .task-area::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+
+/* Only show scrollbar on hover */
+.taskList:not(:hover)::-webkit-scrollbar-thumb, 
+.task-area:not(:hover)::-webkit-scrollbar-thumb {
+  background-color: transparent;
 }
 
 .empty-column-notice, .no-task {
@@ -167,11 +192,13 @@ body {
 
 .task-on-board {
   width: 100%;
-  min-width: 220px;
+  max-width: 100%; /* Ensure tasks don't overflow */
+  min-width: 0; /* Allow tasks to shrink if needed */
   padding: 16px;
   background-color: white;
   border-radius: 24px;
   box-shadow: 0px 0px 10px 3px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box; /* Include padding in width calculation */
   cursor: pointer;
   margin-bottom: 16px;
   transition: box-shadow 0.2s ease;
@@ -340,8 +367,7 @@ body {
   }
   
   .boardColumns, .board-splits {
-    flex-wrap: nowrap;
-    overflow-x: auto;
+    flex-wrap: wrap;
     padding-bottom: 20px; 
     padding-top: 10px;
   }
@@ -377,7 +403,7 @@ body {
   .boardColumns, .board-splits {
     flex-direction: row;
     display: flex;
-    overflow-x: auto;
+    flex-wrap: wrap;
   }
 }
 

@@ -2,14 +2,17 @@
 .contactsList {
   position: absolute;
   width: 100%;
+  max-width: 100%; /* Ensure it doesn't exceed container width */
   max-height: 300px;
   overflow-y: auto;
+  overflow-x: hidden; /* Prevent horizontal overflow */
   background-color: white;
   border: 1px solid #d1d1d1;
   border-radius: 0 0 10px 10px;
   margin-top: 2px;
   z-index: 100;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-sizing: border-box; /* Include padding in width calculation */
 }
 
 
@@ -23,6 +26,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 16px;
+  box-sizing: border-box; /* Include padding in width */
+  width: 100%; /* Take full width of parent */
+  overflow: hidden; /* Prevent overflow */
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
@@ -44,6 +50,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  max-width: calc(100% - 30px); /* Leave room for the checkbox */
+  overflow: hidden; /* Prevent text overflow */
+  text-overflow: ellipsis; /* Show ellipsis for overflowed text */
 }
 
 .contactAvatar {

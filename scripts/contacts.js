@@ -1,20 +1,14 @@
-
-
-
 const CONTACTS_API_ENDPOINT = 'api/contacts/';
-
 
 let contacts = []; 
 let contactColors = {}; 
 let selectedContact = null; 
-
 
 async function initializeContactsView() {
   await loadContacts();
   renderUserInitials();
   renderContactsList();
 }
-
 
 function renderUserInitials() {
   const profileAvatar = document.getElementById('profileAvatar');
@@ -25,7 +19,6 @@ function renderUserInitials() {
   profileAvatar.textContent = initials;
 }
 
-
 function getInitials(name) {
   if (!name) return '';
   return name
@@ -34,7 +27,6 @@ function getInitials(name) {
     .join('')
     .toUpperCase();
 }
-
 
 async function loadContacts() {
   try {
@@ -53,14 +45,11 @@ async function loadContacts() {
         contact.color = contactColors[contact.id];
       });
       
-      console.log('Loaded contacts from API:', contacts);
       return contacts;
     } else {
       throw new Error('Error in API response');
     }
   } catch (error) {
-    console.error('Error loading contacts from API:', error);
-    
     // Show error message to user
     showErrorMessage('Could not load contacts from the server. Please try again later.');
     
@@ -69,24 +58,16 @@ async function loadContacts() {
   }
 }
 
-
-// This function is no longer needed as we use the API exclusively
-function createDefaultContacts() {
-  contacts = [];
-  console.log("Default contacts not created - using API instead");
-}
-
-
 function renderContactsList() {
   const contactsContainer = document.getElementById('contacts-list');
   if (!contactsContainer) return;
   
-  
+  // Sort contacts alphabetically
   const sortedContacts = [...contacts].sort((a, b) => 
     a.name.localeCompare(b.name)
   );
   
-  
+  // Group contacts by first letter
   const contactsByLetter = {};
   sortedContacts.forEach(contact => {
     const firstLetter = contact.name.charAt(0).toUpperCase();
@@ -96,24 +77,23 @@ function renderContactsList() {
     contactsByLetter[firstLetter].push(contact);
   });
   
-  
+  // Clear the container
   contactsContainer.innerHTML = '';
   
-  
+  // Render contacts by letter groups
   Object.keys(contactsByLetter).sort().forEach(letter => {
-    
+    // Add the letter heading
     contactsContainer.innerHTML += `
       <div class="first-letter">${letter}</div>
       <div class="line"></div>
     `;
     
-    
+    // Add contacts for this letter
     contactsByLetter[letter].forEach(contact => {
       contactsContainer.innerHTML += renderContactListItem(contact);
     });
   });
 }
-
 
 function renderContactListItem(contact) {
   const initials = getInitials(contact.name);
@@ -130,23 +110,22 @@ function renderContactListItem(contact) {
   `;
 }
 
-
 function showContactDetails(contactId) {
-  
+  // Find the contact by id
   const contact = contacts.find(c => c.id === contactId);
   if (!contact) return;
   
-  
+  // Update selected contact
   selectedContact = contact;
   
-  
+  // Update the selected contact style
   updateSelectedContactStyle(contactId);
   
-  
+  // Get the details container
   const detailsContainer = document.getElementById('contact-details');
   if (!detailsContainer) return;
   
-  
+  // For mobile: hide the contacts panel
   if (window.innerWidth <= 1120) {
     const contactsList = document.getElementById('contacts-panel');
     if (contactsList) {
@@ -154,7 +133,7 @@ function showContactDetails(contactId) {
     }
   }
   
-  
+  // Render the contact details
   const initials = getInitials(contact.name);
   detailsContainer.innerHTML = `
     <div class="contact-profile-firstrow">
@@ -186,43 +165,38 @@ function showContactDetails(contactId) {
     </div>
   `;
   
-  
+  // Add slide-in animation
   detailsContainer.classList.add('slide-in-right');
 }
 
-
 function updateSelectedContactStyle(contactId) {
-  
+  // Remove selected class from all contacts
   const allContacts = document.querySelectorAll('.contact');
   allContacts.forEach(element => {
     element.classList.remove('selected-contact');
   });
   
-  
+  // Add selected class to the clicked contact
   const selectedElement = document.getElementById(`contact-${contactId}`);
   if (selectedElement) {
     selectedElement.classList.add('selected-contact');
   }
 }
 
-
 function openContactForm() {
-  console.log("Contact form function called");
   const modal = document.getElementById('contact-form-overlay');
   if (modal) {
-    console.log("Contact modal found, setting display to block");
-    // Use direct style manipulation instead of classList
+    // Show the modal
     modal.style.display = "flex";
     
+    // Add slide-in animation to the panel
     const panel = document.getElementById('contact-form-panel');
     if (panel) {
       panel.classList.add('slide-in-right');
     }
-  } else {
-    console.error("Could not find contact-form-overlay element in openContactForm");
   }
   
-  
+  // Clear form fields
   const nameInput = document.getElementById('contact-name-input');
   const emailInput = document.getElementById('contact-email-input');
   const phoneInput = document.getElementById('contact-phone-input');
@@ -232,30 +206,25 @@ function openContactForm() {
   if (phoneInput) phoneInput.value = '';
 }
 
-
 function closeContactForm() {
-  console.log("Close contact form called");
   const modal = document.getElementById('contact-form-overlay');
   const panel = document.getElementById('contact-form-panel');
   
   if (panel) {
-    console.log("Panel found, adding slide-out animation");
+    // Add slide-out animation
     panel.classList.remove('slide-in-right');
     panel.classList.add('slide-out-right');
     
+    // Hide the modal after animation completes
     setTimeout(() => {
-      console.log("Animation timeout completed, hiding modal");
       if (modal) modal.style.display = "none";
       if (panel) panel.classList.remove('slide-out-right');
-    }, 500);
+    }, 300);
   } else if (modal) {
-    console.log("No panel found, directly hiding modal");
+    // If panel not found, just hide the modal
     modal.style.display = "none";
-  } else {
-    console.error("Could not find modal or panel in closeContactForm");
   }
 }
-
 
 function openEditContactForm(contactId) {
   const contact = contacts.find(c => c.id === contactId);
@@ -265,14 +234,14 @@ function openEditContactForm(contactId) {
   if (modal) {
     modal.classList.remove('d-none');
     
-    
+    // Add slide-in animation to the panel
     const panel = document.getElementById('edit-contact-panel');
     if (panel) {
       panel.classList.add('slide-in-right');
     }
   }
   
-  
+  // Fill form with contact data
   const idInput = document.getElementById('edit-contact-id');
   const nameInput = document.getElementById('edit-contact-name');
   const emailInput = document.getElementById('edit-contact-email');
@@ -284,26 +253,24 @@ function openEditContactForm(contactId) {
   if (phoneInput) phoneInput.value = contact.phone;
 }
 
-
 function closeEditContactForm() {
   const modal = document.getElementById('edit-contact-overlay');
   const panel = document.getElementById('edit-contact-panel');
   
   if (panel) {
-    
+    // Add slide-out animation
     panel.classList.remove('slide-in-right');
     panel.classList.add('slide-out-right');
     
-    
+    // Hide the modal after animation completes
     setTimeout(() => {
       if (modal) modal.classList.add('d-none');
       if (panel) panel.classList.remove('slide-out-right');
-    }, 500);
+    }, 300);
   } else if (modal) {
     modal.classList.add('d-none');
   }
 }
-
 
 async function createContact() {
   // Get form values
@@ -344,11 +311,9 @@ async function createContact() {
       throw new Error('API returned error or invalid response');
     }
   } catch (error) {
-    console.error('Error creating contact:', error);
     showErrorMessage('Error creating contact. Please try again later.');
   }
 }
-
 
 async function updateContact() {
   // Get form values
@@ -390,49 +355,45 @@ async function updateContact() {
       throw new Error('API returned error or invalid response');
     }
   } catch (error) {
-    console.error('Error updating contact:', error);
     showErrorMessage('Error updating contact. Please try again later.');
   }
 }
 
-
 async function deleteContact(contactId) {
-  
+  // Confirm deletion
   if (!confirm('Are you sure you want to delete this contact?')) {
     return;
   }
   
   try {
-    
+    // Send delete request to API
     const response = await makeApiRequest(`${CONTACTS_API_ENDPOINT}${contactId}/`, 'DELETE');
     
-    
+    // Remove color for deleted contact
     delete contactColors[contactId];
     
-    
+    // Clear selection if the deleted contact was selected
     if (selectedContact && selectedContact.id === contactId) {
       selectedContact = null;
       
-      
+      // Clear the details panel
       const detailsPanel = document.getElementById('contact-details');
       if (detailsPanel) {
         detailsPanel.innerHTML = '';
       }
     }
     
-    
+    // Refresh contacts list
     await loadContacts();
     renderContactsList();
     
-    
+    // Show success message
     showSuccessMessage('Contact successfully deleted');
     
   } catch (error) {
-    console.error('Error deleting contact:', error);
     showErrorMessage('Error deleting contact');
   }
 }
-
 
 function generateRandomColor() {
   const colors = [
@@ -445,18 +406,53 @@ function generateRandomColor() {
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
-
 function showSuccessMessage(message) {
-  console.log('Success:', message);
+  // Create a notification element
+  const notification = document.createElement('div');
+  notification.className = 'success-notification';
+  notification.style.position = 'fixed';
+  notification.style.bottom = '20px';
+  notification.style.right = '20px';
+  notification.style.backgroundColor = '#2A3647';
+  notification.style.color = 'white';
+  notification.style.padding = '15px 20px';
+  notification.style.borderRadius = '8px';
+  notification.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+  notification.style.zIndex = '9999';
+  notification.textContent = message;
   
+  // Add to the DOM
+  document.body.appendChild(notification);
+  
+  // Remove after a few seconds
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
 }
-
 
 function showErrorMessage(message) {
-  console.error('Error:', message);
+  // Create a notification element
+  const notification = document.createElement('div');
+  notification.className = 'error-notification';
+  notification.style.position = 'fixed';
+  notification.style.bottom = '20px';
+  notification.style.right = '20px';
+  notification.style.backgroundColor = '#FF3D00';
+  notification.style.color = 'white';
+  notification.style.padding = '15px 20px';
+  notification.style.borderRadius = '8px';
+  notification.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+  notification.style.zIndex = '9999';
+  notification.textContent = message;
   
+  // Add to the DOM
+  document.body.appendChild(notification);
+  
+  // Remove after a few seconds
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
 }
-
 
 window.addEventListener('resize', function() {
   if (selectedContact && window.innerWidth > 1120) {
@@ -466,7 +462,6 @@ window.addEventListener('resize', function() {
     }
   }
 });
-
 
 function mobileBackToContactsList() {
   const contactsList = document.getElementById('contacts-panel');
@@ -481,21 +476,12 @@ function mobileBackToContactsList() {
   }
 }
 
-
 function terminateUserSession() {
   localStorage.removeItem('token');
   localStorage.removeItem('userProfile');
   localStorage.removeItem('userName');
   sessionStorage.removeItem('userName');
   window.location.href = 'index.html';
-}
-
-
-function toggleUserMenu() {
-  const menu = document.getElementById('profilePanel');
-  if (menu) {
-    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-  }
 }
 
 // Expose functions to global scope to ensure they're available for onclick attributes
@@ -509,4 +495,3 @@ window.deleteContact = deleteContact;
 window.showContactDetails = showContactDetails;
 window.mobileBackToContactsList = mobileBackToContactsList;
 window.terminateUserSession = terminateUserSession;
-window.toggleUserMenu = toggleUserMenu;

@@ -32,7 +32,11 @@ body {
 
 .taskFormLayout {
   display: flex;
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
   max-width: 1500px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden; /* Prevent overflow */
 }
 
 .taskFormFooter {

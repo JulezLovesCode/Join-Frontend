@@ -9,7 +9,10 @@
   <link rel="stylesheet" href="../styles/fonts.css">
   <link rel="stylesheet" href="../styles/desktop_template.css">
   <link rel="stylesheet" href="../styles/contacts.css">
+  <link rel="stylesheet" href="../styles/contacts_overlay.css">
+  <link rel="stylesheet" href="../styles/contacts_popup.css">
   <link rel="stylesheet" href="../styles/mobile_template.css">
+  <link rel="stylesheet" href="../styles/contacts_responsive.css">
   
   <!-- Load core scripts with defer attribute to ensure they load before DOMContentLoaded -->
   <script src="../scripts/api_config.js" defer></script>
@@ -17,6 +20,7 @@
   <script src="../scripts/error_handling.js" defer></script>
   <script src="../scripts/getHTML.js" defer></script>
   <script src="../script.js" defer></script>
+  <script src="../scripts/user_menu.js" defer></script>
   
   <!-- Load main contacts script last with defer -->
   <script src="../scripts/contacts.js" defer></script>
@@ -34,22 +38,15 @@
       <p>Kanban Project Management Tool</p>
       <div class="utilityControls">
         <img onclick="openHelpCenter()" class="supportButton" src="../assets/images/help.svg" alt="Help" />
-        <div id="profileAvatar" onclick="toggleMenu(); toggleUserPanel();" class="userProfile"></div>
+        <div id="user-profile" onclick="toggleUserPanel();" class="userProfile"></div>
       </div>
     </div>
   </header>
 
-  <div class="profileDropdown user-content" id="profilePanel">
+  <div class="profileDropdown" id="user-panel">
     <a onclick="openLegalNotice()" href="#">Legal Notice</a>
     <a onclick="openPrivacyPolicy()" href="#">Privacy Policy</a>
-    <a onclick="terminateUserSession(); logOut();" href="index.html">Log Out</a>
-  </div>
-  
-  
-  <div class="user-content" id="user-content" style="display: none;">
-    <a onclick="openLegalNotice()" href="#">Legal Notice</a>
-    <a onclick="openPrivacyPolicy()" href="#">Privacy Policy</a>
-    <a onclick="terminateUserSession(); logOut();" href="index.html">Log Out</a>
+    <a onclick="terminateSession();" href="index.html">Log Out</a>
   </div>
 
   <aside class="mainSidebar">
@@ -102,7 +99,53 @@
     </div>
   </div>
 
+  <!-- Add Contact Modal -->
+  <div class="contact-form-overlay" id="contact-form-overlay" style="display: none;" onclick="closeContactForm()">
+    <div class="contact-form-panel" id="contact-form-panel" onclick="event.stopPropagation()">
+      <div class="contact-form-left">
+        <img class="contact-close-symbol" src="../assets/images/close-white.svg" onclick="closeContactForm()">
+        <img src="../assets/images/logo.svg" alt="Join logo">
+        <h1>Add Contact</h1>
+        <div class="contact-form-line"></div>
+      </div>
+      <div class="contact-form-right">
+        <div class="contact-form-close" onclick="closeContactForm()">
+          <img src="../assets/images/add-contact-close.svg" alt="Close form">
+        </div>
+        <div class="contact-form-data">
+          <div class="contact-avatar">
+            <img src="../assets/images/add-contact-person.svg" alt="User profile icon">
+          </div>
+          <div class="contact-form-fields">
+            <form id="contact-form" onsubmit="createContact(); return false;">
+              <div class="input-container">
+                <input placeholder="Name" id="contact-name-input" required type="text" pattern="^[A-Za-z]+ [A-Za-z]+.*$"
+                  title="Please enter at least a first name and a last name">
+              </div>
+              <div class="input-container">
+                <input placeholder="Email" id="contact-email-input" required type="email">
+              </div>
+              <div class="input-container">
+                <input placeholder="Phone" id="contact-phone-input" required type="tel"
+                  pattern="^(\+49\s?\(?0?\)?\s?\d{3}\s?\d{1,}|^\d{4}\s?\d{1,})$"
+                  title="Please enter a valid phone number">
+              </div>
+              <div class="button-group">
+                <button class="button-bright" type="button" onclick="closeContactForm()">
+                  Cancel <img class="contact-icon" src="../assets/images/add-contact-close.svg" alt="Cancel icon">
+                </button>
+                <button class="button-dark button-dark-contact" type="submit">
+                  Create contact<img src="../assets/images/add-contact-check.svg" alt="Create icon">
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   
+  <!-- Mobile Add Contact Form -->
   <div id="mobileWorkContactContainer" style="display: none; z-index: 9999;" onclick="dontClose(event)">
     <div class="addContactLogoContainer">
       <div class="closeMobile" id="closeMobileBtn">
@@ -124,7 +167,7 @@
         <div class="close" id="closeContactBtn">
           <img src="../assets/images/close.svg" alt="">
         </div>
-        <form id="add-contact-form" class="form-input">
+        <form id="add-contact-form" class="form-input" onsubmit="addNewContact(); return false;">
           <div class="input-container">
             <input id="name" type="text" required pattern="^[A-Za-zÀ-ÖØ-öø-ÿ]+(?: [A-Za-zÀ-ÖØ-öø-ÿ]+)*$" placeholder="Name">
             <span class="icon"><img src="../assets/images/add-contact-form-person.svg"></span>   
@@ -157,7 +200,7 @@
     </div>
   </div>
 
-  
+  <!-- Edit Contact Modal -->
   <div class="add-contact-layer" id="edit-contact-overlay" style="display: none;">
     <div class="add-contact-inner-layer" id="edit-contact-panel">
       <div class="add-contact-left">
@@ -206,9 +249,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Scripts are now loaded in the head with defer attribute to ensure proper loading order -->
-  <!-- Empty here - this was moved to the head section -->
 </body>
 
 </html>

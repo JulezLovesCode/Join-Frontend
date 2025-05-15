@@ -142,13 +142,48 @@ async function authenticateUser(userIdentifier, userSecret) {
       password: userSecret,
     };
     
-    
     const responseData = await apiPost(API_CONFIG.ENDPOINTS.AUTH.LOGIN, data, false);
 
     if (responseData && responseData.token) {
-      
+      // Process the response data
       handleAuthentication(responseData);
-      return { success: true, username: responseData.username };
+      
+      // Extract user display name - try first_name + last_name first, then username, then email
+      let displayName = null;
+      
+      if (responseData.user) {
+        // If user object is available, check for name fields
+        if (responseData.user.first_name && responseData.user.last_name) {
+          displayName = `${responseData.user.first_name} ${responseData.user.last_name}`;
+        } else if (responseData.user.username) {
+          displayName = responseData.user.username;
+        } else if (responseData.user.email) {
+          displayName = responseData.user.email.split('@')[0];
+        }
+      }
+      
+      // If no user object or no name was found, try direct properties
+      if (!displayName) {
+        if (responseData.first_name && responseData.last_name) {
+          displayName = `${responseData.first_name} ${responseData.last_name}`;
+        } else if (responseData.username) {
+          displayName = responseData.username;
+        } else if (responseData.name) {
+          displayName = responseData.name;
+        } else if (responseData.email) {
+          displayName = responseData.email.split('@')[0];
+        }
+      }
+      
+      // If still no display name, use the login email
+      if (!displayName) {
+        displayName = userIdentifier.split('@')[0];
+      }
+      
+      // Store the full name
+      localStorage.setItem('userFullName', displayName);
+      
+      return { success: true, username: displayName };
     } else {
       console.error('Authentication failed:', responseData);
       return { success: false };
@@ -187,6 +222,11 @@ function completeSuccessfulLogin(userIdentifier, displayName) {
   // Store email only if remember me is checked
   if (localStorage.getItem('saveCredentials') === 'true') {
     localStorage.setItem('userEmail', userIdentifier);
+  }
+  
+  // Store the display name if available
+  if (displayName) {
+    localStorage.setItem('userFullName', displayName);
   }
   
   // Navigate to the dashboard

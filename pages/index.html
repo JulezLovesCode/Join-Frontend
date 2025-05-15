@@ -50,7 +50,7 @@
                 class="credentialField"
                 type="email"
                 id="loginEmail"
-              /><img class="emailIcon" src="../assets/images/mail.png" alt="" />
+              />
             </div>
             <div class="fieldWrapper" id="pasowrdConteiner">
               <input
@@ -59,15 +59,6 @@
                 type="password"
                 id="loginPassword"
               />
-              <div class="visibilityToggle">
-                <img
-                  class="visibilityIcon"
-                  src="../assets/images/lock.png"
-                  id="visibility_toggle"
-                  alt=""
-                  onclick="togglePasswordVisibility()"
-                />
-              </div>
             </div>
             <div class="validationError" id="wrongPasswordConteiner"></div>
           </div>
@@ -192,7 +183,7 @@
           
           
           
-          const response = await fetch(`${API_BASE_URL}api/auth/login-token/`, {
+          const response = await fetch(`${API_BASE_URL}api/auth/login/`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -201,15 +192,23 @@
           });
           
           
-          const responseText = await response.text();
-          
+          // Check if response is JSON before trying to parse it
+          const contentType = response.headers.get('content-type');
+          const isJsonResponse = contentType && contentType.includes('application/json');
           
           let data;
-          try {
-            data = responseText ? JSON.parse(responseText) : {};
-          } catch (parseError) {
-            console.log('Response is not JSON:', responseText);
-            data = { message: responseText || 'Unknown response from server' };
+          if (isJsonResponse) {
+            const responseText = await response.text();
+            try {
+              data = responseText ? JSON.parse(responseText) : {};
+            } catch (parseError) {
+              console.log('Response is not valid JSON:', responseText);
+              data = { message: 'Invalid response format from server' };
+            }
+          } else {
+            // Handle non-JSON response (like HTML error pages)
+            console.log('Received non-JSON response');
+            data = { message: 'Server returned an invalid response format. Please try again.' };
           }
           
           if (response.ok) {
@@ -220,29 +219,65 @@
               localStorage.setItem('token', data.token);
               
               
+              // Extract the user's full name and username
               let username = '';
-              if (data.user && data.user.username) {
-                username = data.user.username;
-              } else if (data.username) {
-                username = data.username;
-              } else {
+              let fullName = '';
+              
+              // Try to get data from user object first
+              if (data.user) {
+                // Store the full profile for reference
+                localStorage.setItem('userProfile', JSON.stringify(data.user));
                 
+                // Get username from profile
+                if (data.user.username) {
+                  username = data.user.username;
+                }
+                
+                // Try to get full name from first_name/last_name fields
+                if (data.user.first_name && data.user.last_name) {
+                  fullName = `${data.user.first_name} ${data.user.last_name}`;
+                } else if (data.user.name) {
+                  fullName = data.user.name;
+                }
+              }
+              
+              // If not found in user object, try direct properties
+              if (!username && data.username) {
+                username = data.username;
+              }
+              
+              if (!fullName && data.name) {
+                fullName = data.name;
+              } else if (!fullName && data.first_name && data.last_name) {
+                fullName = `${data.first_name} ${data.last_name}`;
+              }
+              
+              // If still no username or full name, use email
+              if (!username) {
                 username = email.split('@')[0];
               }
               
+              if (!fullName) {
+                fullName = username;
+              }
+              
+              // Store both username and full name
               localStorage.setItem('userName', username);
               sessionStorage.setItem('userName', username);
-              
-              
-              if (data.user) {
-                localStorage.setItem('userProfile', JSON.stringify(data.user));
-              }
+              localStorage.setItem('userFullName', fullName);
+              sessionStorage.setItem('userFullName', fullName);
+              console.log('Stored user name:', fullName);
             } else {
-              
+              // If no token, create a mock token for testing
               const mockToken = btoa(email + ':' + Date.now());
               localStorage.setItem('token', mockToken);
-              localStorage.setItem('userName', email.split('@')[0]);
-              sessionStorage.setItem('userName', email.split('@')[0]);
+              
+              // Use email for username and full name if no data returned
+              const usernameFromEmail = email.split('@')[0];
+              localStorage.setItem('userName', usernameFromEmail);
+              sessionStorage.setItem('userName', usernameFromEmail);
+              localStorage.setItem('userFullName', usernameFromEmail);
+              sessionStorage.setItem('userFullName', usernameFromEmail);
             }
             
             

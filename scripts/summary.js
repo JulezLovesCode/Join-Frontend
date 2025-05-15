@@ -1,6 +1,3 @@
-
-
-
 const BOARD_CATEGORIES = {
   TODO: "to-do",
   IN_PROGRESS: "in-progress",
@@ -8,21 +5,10 @@ const BOARD_CATEGORIES = {
   DONE: "done"
 };
 
-
 let tasks = [];
-
-
-const REFRESH_INTERVAL = 10000; // 10 seconds is a more reasonable interval
-
-
-const DEBUG_MODE = true;
-
+const REFRESH_INTERVAL = 10000; // 10 seconds
 
 async function initializeDashboard() {
-  if (DEBUG_MODE) {
-    console.log("%cSummary: Initializing dashboard...", "color: blue; font-weight: bold; font-size: 14px");
-  }
-  
   // Setup user info
   setupUserInfo();
   
@@ -39,11 +25,9 @@ async function initializeDashboard() {
   
   for (let i = 0; i < maxRetries && !loadSuccess; i++) {
     try {
-      if (i > 0) console.log(`Retry ${i} loading summary data...`);
       await loadTasks(); // This now loads from summary API and updates counts directly
       loadSuccess = true;
     } catch (error) {
-      console.error(`Error loading summary data (attempt ${i+1}/${maxRetries}):`, error);
       await new Promise(resolve => setTimeout(resolve, 300));
     }
   }
@@ -59,11 +43,9 @@ async function initializeDashboard() {
       consecutiveErrors = 0; // Reset error counter on success
     } catch (error) {
       consecutiveErrors++;
-      console.warn(`Summary refresh error (${consecutiveErrors}):`, error);
       
       // If we've had too many consecutive errors, slow down the refresh rate
       if (consecutiveErrors > 3) {
-        console.warn(`Too many consecutive errors (${consecutiveErrors}), pausing refresh for 2 minutes`);
         clearInterval(refreshInterval);
         
         // Try again after 2 minutes
@@ -74,22 +56,15 @@ async function initializeDashboard() {
       }
     }
   }, REFRESH_INTERVAL);
-  
-  if (DEBUG_MODE) {
-    console.log("%cSummary: Dashboard initialization complete", "color: green; font-weight: bold");
-  }
 }
-
 
 async function refreshDashboard() {
   // Check if we are authenticated before attempting to refresh
   if (!isAuthenticated()) {
-    console.warn("Not authenticated, skipping dashboard refresh");
     // If not authenticated and on summary page, redirect to login after a delay
     if (window.location.pathname.includes('summary')) {
       const authFailed = sessionStorage.getItem('auth_failed');
       if (authFailed === 'true') {
-        console.warn("Authentication failed, redirecting to login...");
         setTimeout(() => {
           window.location.href = 'index.html';
         }, 1000);
@@ -105,15 +80,9 @@ async function refreshDashboard() {
   updateDeadlineInfo();
 }
 
-
 async function loadTasks() {
-  if (DEBUG_MODE) {
-    console.log("%cSummary: Loading summary data from API...", "color: purple; font-weight: bold");
-  }
-  
   // Check if we are authenticated
   if (!isAuthenticated()) {
-    console.warn("Not authenticated, skipping task loading");
     return;
   }
   
@@ -124,7 +93,6 @@ async function loadTasks() {
     const now = new Date().getTime();
     
     // Force a direct API call to get the most current data
-    console.log("%cForcing fresh API call to summary endpoint", "color: orange; font-weight: bold");
     
     // Update the last call time
     sessionStorage.setItem('last_summary_api_call', now.toString());
@@ -134,10 +102,6 @@ async function loadTasks() {
     const summaryData = await apiGet(`api/summary/${cacheBuster}`);
     
     if (summaryData && typeof summaryData === 'object') {
-      if (DEBUG_MODE) {
-        console.log("%cSummary: Received summary data from API", "color: green", summaryData);
-      }
-      
       // Update the summary data
       const todoCount = summaryData["to-do"] || 0;
       const inProgressCount = summaryData["in-progress"] || 0;
@@ -145,16 +109,6 @@ async function loadTasks() {
       const doneCount = summaryData["done"] || 0;
       const urgentCount = summaryData["urgent"] || 0;
       const totalCount = summaryData["total-tasks"] || 0;
-      
-      // Debug output before updating UI
-      console.log("%cTask counts from server:", "color: green; font-weight: bold", {
-        "To-Do": todoCount,
-        "In Progress": inProgressCount,
-        "Await Feedback": awaitFeedbackCount,
-        "Done": doneCount,
-        "Urgent": urgentCount,
-        "Total": totalCount
-      });
       
       // Update count elements directly
       updateCountElement('toDoCount', todoCount);
@@ -164,41 +118,24 @@ async function loadTasks() {
       updateCountElement('urgentCount', urgentCount);
       updateCountElement('allTasks', totalCount);
       
-      if (DEBUG_MODE) {
-        console.log("%cUpdated summary counts from API:", "color: blue", {
-          "to-do": todoCount,
-          "in-progress": inProgressCount,
-          "await-feedback": awaitFeedbackCount,
-          "done": doneCount,
-          "urgent": urgentCount,
-          "total": totalCount
-        });
-      }
-      
       // Always fetch tasks for other functionality to ensure we have the latest data
       try {
         const tasksResponse = await apiGet(`api/tasks/${cacheBuster}`);
         if (tasksResponse && Array.isArray(tasksResponse)) {
           tasks = tasksResponse;
-          console.log("%cLoaded tasks for deadline calculation:", "color: blue", tasks.length);
         } else {
-          console.warn("Invalid tasks API response format:", tasksResponse);
           tasks = [];
         }
       } catch (taskError) {
-        console.error("Tasks API request failed:", taskError);
         // Don't throw here to keep the summary data we already loaded
       }
       
       return;
     } else {
-      console.warn("Invalid summary data format:", summaryData);
       // Fallback to old method if summary endpoint fails
       await fetchTasksAndUpdateCounts();
     }
   } catch (error) {
-    console.error("Summary API request failed:", error);
-    
     // Don't attempt fallback if we're having authentication issues
     if (error.status !== 401 && error.status !== 403) {
       // Fallback to old method if summary endpoint fails
@@ -223,14 +160,12 @@ async function fetchTasksAndUpdateCounts() {
       tasks = response;
       updateAllCounts(); // Calculate and update counts from tasks
     } else {
-      console.warn("Invalid tasks API response format:", response);
       tasks = [];
       // Reset all counts to zero
       const countElements = ['toDoCount', 'inProgressCount', 'awaitFeedbackCount', 'doneCount', 'urgentCount', 'allTasks'];
       countElements.forEach(id => updateCountElement(id, 0));
     }
   } catch (error) {
-    console.error("Tasks API request failed:", error);
     tasks = [];
     // Reset all counts to zero
     const countElements = ['toDoCount', 'inProgressCount', 'awaitFeedbackCount', 'doneCount', 'urgentCount', 'allTasks'];
@@ -238,30 +173,13 @@ async function fetchTasksAndUpdateCounts() {
   }
 }
 
-
 function updateAllCounts() {
-  
   const todoCount = getTaskCountByCategory(BOARD_CATEGORIES.TODO);
   const inProgressCount = getTaskCountByCategory(BOARD_CATEGORIES.IN_PROGRESS);
   const awaitFeedbackCount = getTaskCountByCategory(BOARD_CATEGORIES.AWAIT_FEEDBACK);
   const doneCount = getTaskCountByCategory(BOARD_CATEGORIES.DONE);
   const urgentCount = getTaskCountByPriority("urgent");
   const totalCount = tasks.length;
-  
-  
-  if (DEBUG_MODE) {
-    console.log("%cSummary: Updating counts", "color: green; font-weight: bold");
-    console.log("%cCurrent counts:", "color: blue", {
-      [BOARD_CATEGORIES.TODO]: todoCount,
-      [BOARD_CATEGORIES.IN_PROGRESS]: inProgressCount,
-      [BOARD_CATEGORIES.AWAIT_FEEDBACK]: awaitFeedbackCount,
-      [BOARD_CATEGORIES.DONE]: doneCount,
-      urgent: urgentCount,
-      total: totalCount
-    });
-  }
-  
-  
   
   const todoElement = document.getElementById('toDoCount');
   const inProgressElement = document.getElementById('inProgressCount');
@@ -272,47 +190,28 @@ function updateAllCounts() {
   
   if (todoElement) {
     todoElement.textContent = todoCount;
-    if (DEBUG_MODE) console.log(`Updated todoCount to ${todoCount}`);
-  } else if (DEBUG_MODE) {
-    console.error("Could not find toDoCount element");
   }
   
   if (inProgressElement) {
     inProgressElement.textContent = inProgressCount;
-    if (DEBUG_MODE) console.log(`Updated inProgressCount to ${inProgressCount}`);
-  } else if (DEBUG_MODE) {
-    console.error("Could not find inProgressCount element");
   }
   
   if (awaitFeedbackElement) {
     awaitFeedbackElement.textContent = awaitFeedbackCount;
-    if (DEBUG_MODE) console.log(`Updated awaitFeedbackCount to ${awaitFeedbackCount}`);
-  } else if (DEBUG_MODE) {
-    console.error("Could not find awaitFeedbackCount element");
   }
   
   if (doneElement) {
     doneElement.textContent = doneCount;
-    if (DEBUG_MODE) console.log(`Updated doneCount to ${doneCount}`);
-  } else if (DEBUG_MODE) {
-    console.error("Could not find doneCount element");
   }
   
   if (urgentElement) {
     urgentElement.textContent = urgentCount;
-    if (DEBUG_MODE) console.log(`Updated urgentCount to ${urgentCount}`);
-  } else if (DEBUG_MODE) {
-    console.error("Could not find urgentCount element");
   }
   
   if (totalElement) {
     totalElement.textContent = totalCount;
-    if (DEBUG_MODE) console.log(`Updated allTasks to ${totalCount}`);
-  } else if (DEBUG_MODE) {
-    console.error("Could not find allTasks element");
   }
 }
-
 
 function updateCountElement(elementId, count) {
   const element = document.getElementById(elementId);
@@ -321,29 +220,22 @@ function updateCountElement(elementId, count) {
   }
 }
 
-
 function getTaskCountByCategory(category) {
   if (!tasks || !Array.isArray(tasks)) {
-    if (DEBUG_MODE) console.warn("getTaskCountByCategory: tasks is not an array", tasks);
     return 0;
   }
   
   if (!category) {
-    if (DEBUG_MODE) console.warn("getTaskCountByCategory: category is undefined");
     return 0;
   }
   
   const categoryLower = category.toLowerCase();
   
-  
   const count = tasks.filter(task => {
     if (!task) return false;
     
-    
-    
     const boardCategory = task.board_category || task.boardCategory || task.category || "";
     const taskCategory = typeof boardCategory === 'string' ? boardCategory.toLowerCase() : "";
-    
     
     if (categoryLower === 'to-do' || categoryLower === 'todo') {
       return taskCategory === 'to-do' || taskCategory === 'todo';
@@ -357,40 +249,18 @@ function getTaskCountByCategory(category) {
       return taskCategory === 'await-feedback' || taskCategory === 'await_feedback' || taskCategory === 'awaitfeedback';
     }
     
-    
     return taskCategory === categoryLower;
   }).length;
-  
-  if (DEBUG_MODE) console.log(`%cCategory count for ${category}: ${count}`, "color: purple");
-  
-  
-  if (category === BOARD_CATEGORIES.TODO && count === 0) {
-    
-    const possibleTodoTasks = tasks.filter(task => {
-      if (!task) return false;
-      
-      
-      const cat = String(task.board_category || task.boardCategory || task.category || "").toLowerCase();
-      return cat.includes("todo") || cat.includes("to-do") || cat.includes("to_do");
-    }).length;
-    
-    if (possibleTodoTasks > 0) {
-      console.warn(`Found ${possibleTodoTasks} possible todo tasks with non-standard formatting`);
-    }
-  }
   
   return count;
 }
 
-
 function getTaskCountByPriority(priority) {
   if (!tasks || !Array.isArray(tasks)) {
-    if (DEBUG_MODE) console.warn("getTaskCountByPriority: tasks is not an array", tasks);
     return 0;
   }
   
   if (!priority) {
-    if (DEBUG_MODE) console.warn("getTaskCountByPriority: priority is undefined");
     return 0;
   }
   
@@ -399,7 +269,6 @@ function getTaskCountByPriority(priority) {
   return tasks.filter(task => {
     if (!task) return false;
     
-    
     const taskPriority = task.priority || task.urgency || task.importance || "";
     const priorityValue = typeof taskPriority === 'string' ? taskPriority.toLowerCase() : "";
     
@@ -407,11 +276,134 @@ function getTaskCountByPriority(priority) {
   }).length;
 }
 
-
 function setupUserInfo() {
-  const userName = localStorage.getItem('userName') || sessionStorage.getItem('userName') || 'Guest';
+  // Priority order: fetch from token data, localStorage, sessionStorage, or fallback to 'Guest'
+  let userName = 'Guest';
   
+  // Get stored username first to have something to display immediately
+  const storedName = localStorage.getItem('userName') || sessionStorage.getItem('userName');
+  if (storedName && storedName !== 'undefined') {
+    userName = storedName;
+    // Update UI with stored name
+    updateGreetingName(userName);
+  }
   
+  // Try to get the username directly from login data
+  const userFullName = localStorage.getItem('userFullName');
+  if (userFullName && userFullName !== 'undefined') {
+    userName = userFullName;
+    updateGreetingName(userName);
+    setupUserAvatar(userName);
+    return; // Use the full name if available
+  }
+  
+  // Setup avatar with current name (will be updated if API call succeeds)
+  setupUserAvatar(userName);
+  
+  // Try to get the authenticated user's name from server
+  const token = localStorage.getItem('token');
+  if (token && typeof apiGet === 'function') {
+    // First try the profiles endpoint
+    tryFetchProfiles();
+    
+    // Then also try a direct user endpoint as fallback
+    setTimeout(() => {
+      if (userName === 'Guest') {
+        tryFetchUserData();
+      }
+    }, 1000);
+  }
+  
+  // Try to fetch profile data
+  function tryFetchProfiles() {
+    apiGet('api/auth/profiles/')
+      .then(data => {
+        if (data && data.length > 0) {
+          let apiUserName = null;
+          
+          // Try to get from user object first
+          if (data[0].user) {
+            apiUserName = data[0].user.username || 
+                         (data[0].user.first_name && data[0].user.last_name ? 
+                          `${data[0].user.first_name} ${data[0].user.last_name}` : null) ||
+                         (data[0].user.email ? data[0].user.email.split('@')[0] : null);
+          }
+          
+          // If not found, try direct properties
+          if (!apiUserName) {
+            apiUserName = data[0].username || 
+                         (data[0].first_name && data[0].last_name ? 
+                          `${data[0].first_name} ${data[0].last_name}` : null) ||
+                         (data[0].email ? data[0].email.split('@')[0] : null);
+          }
+          
+          if (apiUserName && apiUserName !== 'undefined') {
+            userName = apiUserName;
+            // Store for future use
+            localStorage.setItem('userName', userName);
+            localStorage.setItem('userFullName', userName);
+            sessionStorage.setItem('userName', userName);
+            // Update UI with correct name
+            updateGreetingName(userName);
+            // Update avatar with correct name
+            setupUserAvatar(userName);
+          }
+        }
+      })
+      .catch(error => {
+        console.log("Error fetching user profiles: ", error);
+      });
+  }
+  
+  // Try to fetch user data directly
+  function tryFetchUserData() {
+    apiGet('api/auth/user/')
+      .then(data => {
+        if (data) {
+          let apiUserName = null;
+          
+          // Try to get full name first
+          if (data.first_name && data.last_name) {
+            apiUserName = `${data.first_name} ${data.last_name}`;
+          } else if (data.username) {
+            apiUserName = data.username;
+          } else if (data.email) {
+            apiUserName = data.email.split('@')[0];
+          }
+          
+          if (apiUserName && apiUserName !== 'undefined') {
+            userName = apiUserName;
+            // Store for future use
+            localStorage.setItem('userName', userName);
+            localStorage.setItem('userFullName', userName);
+            sessionStorage.setItem('userName', userName);
+            // Update UI with correct name
+            updateGreetingName(userName);
+            // Update avatar with correct name
+            setupUserAvatar(userName);
+          }
+        }
+      })
+      .catch(error => {
+        console.log("Error fetching user data: ", error);
+      });
+  }
+}
+
+function updateGreetingName(userName) {
+  // Get the most suitable user name for display
+  // First try the full name, then username, then default to "Guest"
+  let displayName = localStorage.getItem('userFullName') || 
+                   sessionStorage.getItem('userFullName') || 
+                   userName || 
+                   'Guest';
+  
+  // Don't display "undefined" as a name
+  if (displayName === 'undefined') {
+    displayName = 'Guest';
+  }
+  
+  // Get current hour to determine greeting
   const hour = new Date().getHours();
   let greeting = 'Good ';
   
@@ -425,24 +417,27 @@ function setupUserInfo() {
     greeting += 'night';
   }
   
-  
+  // Update greeting in the DOM
   const greetingContainer = document.getElementById('greeting-container');
+  const userGreeting = document.getElementById('userGreeting');
+  
   if (greetingContainer) {
     greetingContainer.innerHTML = `
       <span class="greet-text">${greeting},</span>
-      <span class="greet-user-name">${userName}</span>
+      <span class="greet-user-name" id="userGreeting">${displayName}</span>
     `;
+  } else if (userGreeting) {
+    // If container can't be found but the greeting span exists, update just that
+    userGreeting.textContent = displayName;
   }
   
-  
-  setupUserAvatar(userName);
+  console.log('Greeting updated with name:', displayName);
 }
 
-
 function setupUserAvatar(userName) {
-  const avatarElement = document.getElementById('profileAvatar');
+  // Use the updated ID from user_menu.js
+  const avatarElement = document.getElementById('user-profile');
   if (!avatarElement) return;
-  
   
   let initials = 'G'; 
   if (userName && userName !== 'Guest') {
@@ -455,33 +450,21 @@ function setupUserAvatar(userName) {
     initials = initials.toUpperCase();
   }
   
-  
   avatarElement.textContent = initials;
   
+  const avatarColors = [
+    '#FF7A00', '#FF5EB3', '#6E52FF', '#9327FF', '#00BEE8',
+    '#1FD7C1', '#FF745E', '#FFA35E', '#FC71FF', '#FFC701'
+  ];
   
   const colorIndex = userName.charCodeAt(0) % avatarColors.length;
   avatarElement.style.backgroundColor = avatarColors[colorIndex];
-  
-  
-  avatarElement.addEventListener('click', function() {
-    const profilePanel = document.getElementById('profilePanel');
-    if (profilePanel) {
-      profilePanel.classList.toggle('show');
-    }
-  });
 }
-
-
-const avatarColors = [
-  '#FF7A00', '#FF5EB3', '#6E52FF', '#9327FF', '#00BEE8',
-  '#1FD7C1', '#FF745E', '#FFA35E', '#FC71FF', '#FFC701'
-];
-
+}
 
 function updateDeadlineInfo() {
   const upcomingDateElement = document.getElementById('upcomingDate');
   if (!upcomingDateElement) return;
-  
   
   const urgentTasks = tasks.filter(task => 
     task.priority && task.priority.toLowerCase() === 'urgent' && task.due_date
@@ -492,7 +475,6 @@ function updateDeadlineInfo() {
     return;
   }
   
-  
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -502,7 +484,6 @@ function updateDeadlineInfo() {
   urgentTasks.forEach(task => {
     if (!task.due_date) return;
     
-    
     let dueDate;
     try {
       dueDate = new Date(task.due_date);
@@ -510,22 +491,18 @@ function updateDeadlineInfo() {
       if (isNaN(dueDate.getTime())) {
         const parts = task.due_date.split(/[-/]/);
         if (parts.length === 3) {
-          
           dueDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
         }
       }
     } catch (e) {
-      console.error("Summary: Error parsing date", task.due_date, e);
       return;
     }
     
     if (isNaN(dueDate.getTime())) {
-      console.warn("Summary: Invalid date format", task.due_date);
       return;
     }
     
     const diff = dueDate.getTime() - today.getTime();
-    
     
     if (diff >= 0 && diff < closestDiff) {
       closestTask = task;
@@ -533,10 +510,8 @@ function updateDeadlineInfo() {
     }
   });
   
-  
   if (closestTask && closestTask.due_date) {
     const dueDate = new Date(closestTask.due_date);
-    
     
     const formattedDate = dueDate.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -549,7 +524,6 @@ function updateDeadlineInfo() {
     upcomingDateElement.textContent = '';
   }
 }
-
 
 function configureInitialState() {
   const animationScreen = document.getElementById('animationScreen');
@@ -569,14 +543,12 @@ function configureInitialState() {
   }
 }
 
-
 function showWelcomeAnimation() {
   const animationScreen = document.getElementById('animationScreen');
   if (!animationScreen) return;
   
   const userName = localStorage.getItem('userName') || 
                  sessionStorage.getItem('userName') || 'Guest';
-  
   
   const hour = new Date().getHours();
   let timeOfDay = 'night';
@@ -585,7 +557,6 @@ function showWelcomeAnimation() {
   else if (hour >= 12 && hour < 18) timeOfDay = 'afternoon';
   else if (hour >= 18 && hour < 22) timeOfDay = 'evening';
   
-  
   animationScreen.innerHTML = `
     <div class="greeting-user-animation">
       <span class="greet-text">Good ${timeOfDay},</span>
@@ -593,10 +564,8 @@ function showWelcomeAnimation() {
     </div>
   `;
   
-  
   animationScreen.classList.remove('d-none');
   animationScreen.classList.add('fadeIn');
-  
   
   setTimeout(() => {
     animationScreen.classList.remove('fadeIn');
@@ -610,7 +579,6 @@ function showWelcomeAnimation() {
   }, 2000);
 }
 
-
 function terminateUserSession() {
   localStorage.removeItem('token');
   localStorage.removeItem('userName');
@@ -618,97 +586,16 @@ function terminateUserSession() {
   window.location.href = 'index.html';
 }
 
-
-function debugSummary() {
-  console.log("=========== SUMMARY DEBUG ===========");
-  
-  
-  try {
-    const mockTasksStr = localStorage.getItem('mockTasks');
-    console.log("mockTasks in localStorage exists:", !!mockTasksStr);
-    
-    if (mockTasksStr) {
-      const mockTasks = JSON.parse(mockTasksStr);
-      console.log("mockTasks parsed successfully:", !!mockTasks);
-      console.log("mockTasks is array:", Array.isArray(mockTasks));
-      console.log("mockTasks length:", mockTasks ? mockTasks.length : 0);
-      
-      if (Array.isArray(mockTasks) && mockTasks.length > 0) {
-        console.log("First task:", mockTasks[0]);
-        
-        
-        const todoCount = mockTasks.filter(t => t.board_category === BOARD_CATEGORIES.TODO).length;
-        const inProgressCount = mockTasks.filter(t => t.board_category === BOARD_CATEGORIES.IN_PROGRESS).length;
-        const awaitFeedbackCount = mockTasks.filter(t => t.board_category === BOARD_CATEGORIES.AWAIT_FEEDBACK).length;
-        const doneCount = mockTasks.filter(t => t.board_category === BOARD_CATEGORIES.DONE).length;
-        
-        console.log("Category counts in localStorage:", {
-          [BOARD_CATEGORIES.TODO]: todoCount,
-          [BOARD_CATEGORIES.IN_PROGRESS]: inProgressCount,
-          [BOARD_CATEGORIES.AWAIT_FEEDBACK]: awaitFeedbackCount,
-          [BOARD_CATEGORIES.DONE]: doneCount,
-          total: mockTasks.length
-        });
-      }
-    }
-  } catch (error) {
-    console.error("Error debugging localStorage:", error);
-  }
-  
-  
-  console.log("Current tasks array:", tasks);
-  console.log("Current counts in memory:", {
-    [BOARD_CATEGORIES.TODO]: getTaskCountByCategory(BOARD_CATEGORIES.TODO),
-    [BOARD_CATEGORIES.IN_PROGRESS]: getTaskCountByCategory(BOARD_CATEGORIES.IN_PROGRESS),
-    [BOARD_CATEGORIES.AWAIT_FEEDBACK]: getTaskCountByCategory(BOARD_CATEGORIES.AWAIT_FEEDBACK),
-    [BOARD_CATEGORIES.DONE]: getTaskCountByCategory(BOARD_CATEGORIES.DONE),
-    total: tasks.length
-  });
-  
-  
-  console.log("DOM counter elements:", {
-    todoElement: document.getElementById('toDoCount'),
-    inProgressElement: document.getElementById('inProgressCount'),
-    awaitFeedbackElement: document.getElementById('awaitFeedbackCount'),
-    doneElement: document.getElementById('doneCount'),
-    totalElement: document.getElementById('allTasks')
-  });
-  
-  console.log("======= END SUMMARY DEBUG =======");
-  
-  
-  loadTasks().then(() => {
-    updateAllCounts();
-  });
-}
-
-
 function forceUpdate() {
-  console.log("Force updating dashboard...");
   return loadTasks().then(() => {
     updateAllCounts();
     updateDeadlineInfo();
-    console.log("Force update complete!");
     return true;
   });
 }
 
-
-window.debugSummary = debugSummary;
 window.forceUpdate = forceUpdate;
 
-
 document.addEventListener('DOMContentLoaded', function() {
-  console.log("DOMContentLoaded event fired in summary.js");
-  
+  initializeDashboard();
 });
-
-
-console.log("Summary.js loaded - initializing now");
-setTimeout(() => {
-  
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    console.log("Document ready, initializing dashboard");
-    initializeDashboard();
-  }
-}, 100);

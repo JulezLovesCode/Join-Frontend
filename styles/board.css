@@ -1,8 +1,8 @@
-
 body {
   font-family: 'Inter', sans-serif;
   margin: 0;
   height: 100vh;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .main-content {
@@ -10,16 +10,17 @@ body {
   height: 100vh;
 }
 
-
 .boardContent {
   flex: 1;
   padding: 20px;
   background-color: #f6f7f8;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
   margin-left: 324px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  max-width: calc(100vw - 324px); /* Ensure content doesn't exceed viewport */
 }
 
 .boardHeader,
@@ -28,7 +29,8 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  width: 1056px;
+  width: 100%; /* Use percentage instead of fixed width */
+  max-width: 1056px;
 }
 
 .boardHeader h1 {
@@ -54,7 +56,8 @@ body {
 #search-input {
   border: 1px solid #a8a8a8;
   border-radius: 10px;
-  width: 422px;
+  width: 100%; /* Use percentage instead of fixed width */
+  max-width: 422px;
   height: 50px;
   padding: 0px 21px 0px 21px;
   font-size: 20px;
@@ -80,6 +83,7 @@ body {
   padding: 13px 15px;
   cursor: pointer;
   font-size: 20px;
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .addTaskButton img {
@@ -88,19 +92,22 @@ body {
   padding-left: 4px;
 }
 
-
 .boardColumns,
 .board-splits {
   display: flex;
   flex-direction: row;
   gap: 26px;
   padding-top: 50px;
-  width: 1056px;
+  width: 100%; /* Use percentage instead of fixed width */
+  max-width: 1056px;
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
 }
 
 .column,
 .board-split {
-  width: 252px;
+  width: calc(25% - 26px); /* Dynamically calculate width */
+  min-width: 240px;
+  max-width: 252px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -111,7 +118,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 244px;
+  width: 100%; /* Use percentage instead of fixed width */
+  max-width: 244px;
   padding-bottom: 15px;
 }
 
@@ -132,7 +140,8 @@ body {
 
 .taskList,
 .task-area {
-  width: 252px;
+  width: 100%; /* Use percentage instead of fixed width */
+  max-width: 252px;
   min-height: 800px;
   display: flex;
   flex-direction: column;
@@ -153,7 +162,8 @@ body {
 
 .empty-column-notice,
 .no-task {
-  width: 252px;
+  width: 100%; /* Use percentage instead of fixed width */
+  max-width: 252px;
   height: 48px;
   background-color: #e7e7e7;
   border: 1px dotted #a8a8a8;
@@ -167,9 +177,9 @@ body {
   margin-bottom: 16px;
 }
 
-
 .task-on-board {
-  min-width: 220px;
+  width: 100%; /* Use percentage instead of fixed width */
+  min-width: 0; /* Remove min-width */
   max-width: 220px;
   padding: 16px;
   background-color: white;
@@ -178,6 +188,7 @@ body {
   cursor: pointer;
   margin-bottom: 16px;
   transition: transform 0.3s ease;
+  box-sizing: border-box; /* Include padding in width calculation */
 }
 
 .task-on-board:hover {
@@ -201,5 +212,18 @@ body {
   background-color: #1fd7c1;
 }
 
+/* For responsiveness */
+@media (max-width: 768px) {
+  .boardContent {
+    margin-left: 0;
+    max-width: 100%;
+  }
+  
+  .boardControls,
+  .board-firstrow-right {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
 
 @import url("board_cards.css");

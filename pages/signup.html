@@ -204,14 +204,15 @@
           console.log('Registration successful', data);
           
           
-          if (data.token) {
-            localStorage.setItem(API_CONFIG.TOKEN_STORAGE_KEY, data.token);
-
-            // Store username from the server response
-            const username = data.username || email.split('@')[0];
-            localStorage.setItem(API_CONFIG.USERNAME_STORAGE_KEY, username);
-            sessionStorage.setItem(API_CONFIG.USERNAME_STORAGE_KEY, username);
+          // Do not store token after registration - user should log in manually
+          if (data.email) {
+            // Just store email temporarily to pre-fill login form
+            sessionStorage.setItem('registered_email', data.email);
           }
+          
+          // Make sure any existing auth tokens are cleared
+          localStorage.removeItem(API_CONFIG.TOKEN_STORAGE_KEY);
+          sessionStorage.removeItem(API_CONFIG.TOKEN_STORAGE_KEY);
 
           // No longer storing raw credentials in localStorage
           // Only using token-based authentication
@@ -236,8 +237,10 @@
           successMessage.classList.add('visible');
           
           
-          // Redirect to summary page since user is now logged in
-          window.location.href = 'summary.html';
+          // Show success message for 2 seconds, then redirect to login page
+          setTimeout(function() {
+            window.location.href = 'index.html';
+          }, 2000);
         } else {
           
           console.error('Registration failed:', data);

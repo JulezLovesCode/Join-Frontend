@@ -1,4 +1,3 @@
-
 function returnToHomepage() {
   window.location.href = 'index.html';
 }
@@ -93,7 +92,7 @@ function displayPasswordMismatchError() {
 
 
 function handleRegistrationError(error) {
-  console.error('Registration failed:', error);
+  // Handle registration errors silently
 }
 
 
@@ -114,7 +113,6 @@ async function registerNewAccount(userData) {
       handleRegistrationFailure(responseData);
     }
   } catch (error) {
-    console.error('Network error during registration:', error);
     alert(
       'Registration failed due to a network error. Please try again later.'
     );
@@ -152,29 +150,28 @@ async function sendRegistrationRequest(payload) {
 
 
 function handleSuccessfulRegistration(responseData) {
-  if (responseData.token) {
-    storeUserSession(responseData);
-  } else {
-    console.error('No token received from registration');
+  // Never store the token after registration, always redirect to login page
+  if (responseData.email) {
+    sessionStorage.setItem('registered_email', responseData.email);
   }
+  
+  // Clear any existing token to ensure login is required
+  localStorage.removeItem(API_CONFIG.TOKEN_STORAGE_KEY);
+  sessionStorage.removeItem(API_CONFIG.TOKEN_STORAGE_KEY);
 
   showRegistrationSuccess();
 }
 
 
 function storeUserSession(responseData) {
-  // Store token in localStorage using the consistent key from API_CONFIG
-  localStorage.setItem(API_CONFIG.TOKEN_STORAGE_KEY, responseData.token);
-  
-  // Store username in both localStorage and sessionStorage for consistency
+  // Not storing token immediately after registration
+  // Only storing username for display in success message
   const username = responseData.username || responseData.email;
-  localStorage.setItem(API_CONFIG.USERNAME_STORAGE_KEY, username);
   sessionStorage.setItem(API_CONFIG.USERNAME_STORAGE_KEY, username);
 }
 
 
 function handleRegistrationFailure(responseData) {
-  console.error('Registration error:', responseData);
   alert('Registration failed: ' + JSON.stringify(responseData));
 }
 
@@ -185,16 +182,16 @@ function showRegistrationSuccess() {
 
   setTimeout(function () {
     notificationElement.classList.remove('show');
-    // Redirect straight to summary page since user is now logged in
-    window.location.href = 'summary.html';
+    // Redirect to login page instead of summary
+    window.location.href = 'index.html';
   }, 2000);
 }
 
 
 function clearUserSessionData() {
-  // This function is no longer needed as we want to keep the user logged in
-  // after registration. Don't clear auth data here.
-  return;
+  // Clear any authentication data to ensure proper login flow
+  localStorage.removeItem(API_CONFIG.TOKEN_STORAGE_KEY);
+  sessionStorage.removeItem(API_CONFIG.TOKEN_STORAGE_KEY);
 }
 
 

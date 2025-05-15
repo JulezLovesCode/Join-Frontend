@@ -17,7 +17,7 @@
         <p>Kanban Project Management Tool</p>
         <div class="utilityControls">
           <img src="../assets/images/help.svg" alt="Help" class="supportButton" />
-          <div class="userProfile" id="user-profile" onclick="toggleUserPanel()"></div>
+          <div class="userProfile" id="user-profile"></div>
         </div>
       </div>
     </header>
@@ -178,22 +178,9 @@
     <script src="../scripts/api_config.js"></script>
     <script src="../scripts/error_handling.js"></script>
     <script src="../scripts/api.js"></script>
+    <script src="../scripts/user_menu.js"></script>
     <script src="../scripts/board.js"></script>
     <script src="../scripts/board_layer.js"></script>
     <script src="../scripts/board_edit_layer.js"></script>
-    <script>
-      
-      function toggleUserPanel() {
-        const userPanel = document.getElementById('user-panel');
-        userPanel.classList.toggle('hidden');
-      }
-      
-      function terminateSession() {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userName');
-        sessionStorage.clear();
-        window.location.href = 'index.html';
-      }
-    </script>
   </body>
 </html>
