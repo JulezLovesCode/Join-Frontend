@@ -97,3 +97,26 @@ async function patchApiData(endpoint, data) {
 async function deleteApiData(endpoint) {
   return makeApiRequest(endpoint, 'DELETE');
 }
+
+// Export functions globally with API prefixes to match expected naming
+window.apiGet = async function(endpoint) {
+  console.log(`Making API GET request to: ${endpoint}`);
+  return getApiData(endpoint);
+};
+
+window.apiPost = async function(endpoint, data) {
+  console.log(`Making API POST request to: ${endpoint}`, data);
+  return postApiData(endpoint, data);
+};
+
+window.apiPatch = async function(endpoint, data) {
+  console.log(`Making API PATCH request to: ${endpoint}`, data);
+  return patchApiData(endpoint, data);
+};
+
+window.apiDelete = async function(endpoint) {
+  console.log(`Making API DELETE request to: ${endpoint}`);
+  return deleteApiData(endpoint);
+};
+
+console.log("API functions initialized and exported globally");

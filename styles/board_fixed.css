@@ -7,6 +7,33 @@ body {
   width: 100vw; /* Ensure body takes full width */
 }
 
+/* EMERGENCY FIX FOR TASK POPUP LAYOUT */
+.show-task-inner-layer {
+  padding: 10px !important;
+  max-height: 80vh !important;
+  overflow-y: auto !important;
+  line-height: 1.2 !important;
+}
+.show-task-inner-layer * {
+  margin: 3px 0 !important;
+  padding: 0 !important;
+}
+.show-task-inner-layer h1 {
+  font-size: 1.5em !important;
+  margin-top: 5px !important;
+  margin-bottom: 10px !important;
+}
+.show-task-text-rows {
+  margin: 4px 0 !important;
+}
+.pb8, .mt12 {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.show-task-lastrow {
+  margin-top: 10px !important;
+}
+
 .main-content {
   display: flex;
   height: 100vh;

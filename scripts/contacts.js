@@ -275,6 +275,18 @@ async function createContact() {
   const phone = document.getElementById('contact-phone-input').value;
   const color = generateRandomColor();
   
+  // Validate inputs
+  if (!name || !email || !phone) {
+    showErrorMessage('Please fill in all required fields');
+    return;
+  }
+  
+  // Validate email format
+  if (!validateEmail(email)) {
+    showErrorMessage('Please enter a valid email address');
+    return;
+  }
+  
   // Create new contact object
   const newContact = {
     name: name,
@@ -284,31 +296,62 @@ async function createContact() {
   };
   
   try {
-    // Send contact to the API
+    // First check if email already exists - this avoids server errors
+    const existingContacts = contacts.filter(c => c.email && c.email.toLowerCase() === email.toLowerCase());
+    if (existingContacts.length > 0) {
+      showErrorMessage('A contact with this email already exists');
+      return;
+    }
+    
+    // Try to create the contact
+    showSuccessMessage('Creating contact...');
+    
+    // Send contact to the API with proper error handling
     const response = await makeApiRequest(CONTACTS_API_ENDPOINT, 'POST', newContact);
     
-    if (response && !response.error) {
-      // Save color for the new contact
-      contactColors[response.id] = color;
-      
-      // Close form
-      closeContactForm();
-      
-      // Refresh contacts list
-      await loadContacts();
-      renderContactsList();
-      
-      // Show details of the new contact
-      showContactDetails(response.id);
-      
-      // Show success message
-      showSuccessMessage('Contact successfully created');
-    } else {
-      throw new Error('API returned error or invalid response');
+    if (!response) {
+      throw new Error('No response from server');
     }
+    
+    if (response.email && Array.isArray(response.email)) {
+      throw new Error('Email: ' + response.email[0]);
+    }
+    
+    if (response.error || response.detail) {
+      throw new Error(response.error || response.detail || 'Error creating contact');
+    }
+    
+    // Save color for the new contact
+    contactColors[response.id] = color;
+    
+    // Close form
+    closeContactForm();
+    
+    // Refresh contacts list
+    await loadContacts();
+    renderContactsList();
+    
+    // Show details of the new contact
+    showContactDetails(response.id);
+    
+    // Show success message
+    showSuccessMessage('Contact successfully created');
   } catch (error) {
-    showErrorMessage('Error creating contact. Please try again later.');
+    console.error('Error creating contact:', error);
+    
+    // Handle specific errors
+    if (error.message && error.message.includes('email already exists')) {
+      showErrorMessage('A contact with this email already exists');
+    } else {
+      showErrorMessage(error.message || 'Error creating contact. Please try again later.');
+    }
   }
+}
+
+// Helper function to validate email format
+function validateEmail(email) {
+  const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return re.test(String(email).toLowerCase());
 }
 
 async function updateContact() {

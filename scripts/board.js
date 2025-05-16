@@ -175,8 +175,43 @@ if (typeof apiDelete !== 'function') {
   console.warn("Using fallback apiDelete function");
 }
 
+// Add apiPost function if not already defined
+if (typeof apiPost !== 'function') {
+  window.apiPost = async function(endpoint, data) {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Token ${token}`;
+      }
+      
+      const url = endpoint.startsWith('http') ? endpoint : `${API_CONFIG.BASE_URL}${endpoint}`;
+      const response = await fetch(url, { 
+        method: 'POST', 
+        headers,
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`Fallback apiPost error:`, error);
+      throw error;
+    }
+  };
+  console.warn("Using fallback apiPost function");
+}
 
-async function boardInit() {
+
+// Make boardInit globally available
+window.boardInit = async function() {
+  console.log("Board initialization started");
   showLoadingIndicator();
   
   try {
@@ -197,6 +232,7 @@ async function boardInit() {
     }, 500);
     
     hideLoadingIndicator();
+    console.log("Board initialization completed successfully");
   } catch (error) {
     console.error("Error initializing board:", error);
     hideLoadingIndicator();
@@ -591,13 +627,26 @@ function generateTaskOnBoardHTML(key, taskId, categoryClass, task, contactsHTML,
   let totalSubtasks = 0;
   let completedSubtasks = 0;
   
-  if (task.subtasks) {
-    if (Array.isArray(task.subtasks)) {
-      totalSubtasks = task.subtasks.length;
-      completedSubtasks = task.subtasks.filter(subtask => subtask.completed).length;
+  // Get the appropriate subtasks container
+  let subtasksContainer = null;
+  
+  // Try each possible subtasks property
+  if (task.task_components && (Array.isArray(task.task_components) || typeof task.task_components === 'object')) {
+    subtasksContainer = task.task_components;
+  } else if (task.subtasks && (Array.isArray(task.subtasks) || typeof task.subtasks === 'object')) {
+    subtasksContainer = task.subtasks;
+  } else if (task.components && (Array.isArray(task.components) || typeof task.components === 'object')) {
+    subtasksContainer = task.components;
+  }
+  
+  // Calculate subtask progress
+  if (subtasksContainer) {
+    if (Array.isArray(subtasksContainer)) {
+      totalSubtasks = subtasksContainer.length;
+      completedSubtasks = subtasksContainer.filter(subtask => subtask.completed).length;
     } else {
-      totalSubtasks = Object.keys(task.subtasks).length;
-      completedSubtasks = Object.values(task.subtasks).filter(subtask => subtask.completed).length;
+      totalSubtasks = Object.keys(subtasksContainer).length;
+      completedSubtasks = Object.values(subtasksContainer).filter(subtask => subtask.completed).length;
     }
   }
   
@@ -832,13 +881,39 @@ function getTaskAssignees(task) {
 }
 
 function getTaskSubtasks(task) {
+  console.log("Getting subtasks for task:", task);
+  
   // Try to get subtasks from different possible properties
   let subtasks = null;
   
-  if (task.subtasks && (Array.isArray(task.subtasks) || typeof task.subtasks === 'object')) {
+  // First try task_components property (from serializer)
+  if (task.task_components && (Array.isArray(task.task_components) || typeof task.task_components === 'object')) {
+    subtasks = task.task_components;
+    console.log("Found subtasks in task.task_components:", subtasks);
+  }
+  // Then try direct subtasks property
+  else if (task.subtasks && (Array.isArray(task.subtasks) || typeof task.subtasks === 'object')) {
     subtasks = task.subtasks;
+    console.log("Found subtasks in task.subtasks:", subtasks);
+  } 
+  // Then try components property (Django model relation name)
+  else if (task.components && (Array.isArray(task.components) || typeof task.components === 'object')) {
+    subtasks = task.components;
+    console.log("Found subtasks in task.components:", subtasks);
   }
   
+  // If we found subtasks but they're empty, return null
+  if (subtasks) {
+    if (Array.isArray(subtasks) && subtasks.length === 0) {
+      return null;
+    } else if (typeof subtasks === 'object' && Object.keys(subtasks).length === 0) {
+      return null;
+    }
+  } else {
+    console.log("No subtasks found in task");
+  }
+  
+  console.log("Final subtasks:", subtasks);
   return subtasks;
 }
 
@@ -867,69 +942,168 @@ function generateAssigneesList(contacts) {
 
 
 function generateSubtasksList(subtasks, taskId) {
+  console.log("Generating subtasks list for task", taskId, "with subtasks:", subtasks);
+  
   if (!subtasks) {
+    console.log("No subtasks found for task", taskId);
     return '';
   }
   
-  // Handle both array and object formats for subtasks
+  // Handle array format for subtasks (from task_components)
   if (Array.isArray(subtasks)) {
-    if (subtasks.length === 0) return '';
+    if (subtasks.length === 0) {
+      console.log("Empty array of subtasks");
+      return '';
+    }
     
+    console.log("Processing array of", subtasks.length, "subtasks");
     return subtasks.map((subtask, index) => {
-      const checkboxImage = subtask.completed ? 
+      // Handle different subtask properties for completed status
+      const isCompleted = 
+        subtask.completed === true || 
+        subtask.done === true || 
+        subtask.finished === true;
+        
+      const checkboxImage = isCompleted ? 
         "../assets/images/subtasks_checked.svg" : 
         "../assets/images/subtasks_notchecked.svg";
-        
+      
+      // Handle different subtask properties for title
+      const subtaskTitle = 
+        subtask.title || 
+        subtask.name || 
+        subtask.text || 
+        'Untitled Subtask';
+      
+      // Store the subtask index directly as data attribute 
       return `
-        <div class="show-task-subtask" onclick="toggleSubtask('${taskId}', '${index}', this)">
+        <div class="show-task-subtask" onclick="toggleSubtask('${taskId}', ${index}, this)" data-subtask-index="${index}">
           <img src="${checkboxImage}" alt="checkbox">
-          <p>${subtask.title}</p>
+          <p>${subtaskTitle}</p>
         </div>
       `;
     }).join('');
-  } else if (typeof subtasks === 'object') {
-    if (Object.keys(subtasks).length === 0) return '';
+  } 
+  // Handle object format for subtasks
+  else if (typeof subtasks === 'object') {
+    if (Object.keys(subtasks).length === 0) {
+      console.log("Empty object of subtasks");
+      return '';
+    }
     
-    return Object.entries(subtasks).map(([key, subtask]) => {
-      const checkboxImage = subtask.completed ? 
+    console.log("Processing object with", Object.keys(subtasks).length, "subtasks");
+    return Object.entries(subtasks).map(([key, subtask], index) => {
+      // If subtask is just a string, create a simple object
+      if (typeof subtask === 'string') {
+        subtask = { title: subtask, completed: false };
+      }
+      
+      // Handle different subtask properties for completed status
+      const isCompleted = 
+        subtask.completed === true || 
+        subtask.done === true || 
+        subtask.finished === true;
+        
+      const checkboxImage = isCompleted ? 
         "../assets/images/subtasks_checked.svg" : 
         "../assets/images/subtasks_notchecked.svg";
+      
+      // Handle different subtask properties for title
+      const subtaskTitle = 
+        subtask.title || 
+        subtask.name || 
+        subtask.text || 
+        'Untitled Subtask';
         
       return `
-        <div class="show-task-subtask" onclick="toggleSubtask('${taskId}', '${key}', this)">
+        <div class="show-task-subtask" onclick="toggleSubtask('${taskId}', ${index}, this)" data-subtask-index="${index}" data-subtask-key="${key}">
           <img src="${checkboxImage}" alt="checkbox">
-          <p>${subtask.title}</p>
+          <p>${subtaskTitle}</p>
         </div>
       `;
     }).join('');
   }
   
+  console.log("Unexpected subtask format:", typeof subtasks);
   return '';
 }
 
 
-function toggleSubtask(taskId, subtaskKey, element) {
+function toggleSubtask(taskId, subtaskIndex, element) {
+  console.log("Toggling subtask:", taskId, subtaskIndex);
+  
   const task = tasksArray.find(t => t.id == taskId);
-  if (!task || !task.subtasks) {
+  if (!task) {
+    console.error("Task not found:", taskId);
     return;
   }
   
-  // Handle both array and object formats for subtasks
-  let subtask;
-  if (Array.isArray(task.subtasks)) {
-    subtask = task.subtasks[Number(subtaskKey)];
-    if (!subtask) return;
-    
-    task.subtasks[Number(subtaskKey)].completed = !task.subtasks[Number(subtaskKey)].completed;
-    subtask = task.subtasks[Number(subtaskKey)];
+  // First determine which property contains the subtasks
+  let subtasksContainer = null;
+  let subtaskProperty = null;
+  
+  if (task.task_components) {
+    subtasksContainer = task.task_components;
+    subtaskProperty = 'task_components';
+  } else if (task.subtasks) {
+    subtasksContainer = task.subtasks;
+    subtaskProperty = 'subtasks';
+  } else if (task.components) {
+    subtasksContainer = task.components;
+    subtaskProperty = 'components';
   } else {
-    subtask = task.subtasks[subtaskKey];
-    if (!subtask) return;
-    
-    task.subtasks[subtaskKey].completed = !task.subtasks[subtaskKey].completed;
-    subtask = task.subtasks[subtaskKey];
+    console.error("No subtasks container found in task:", task);
+    return;
   }
   
+  console.log("Using subtasks from:", subtaskProperty);
+  
+  // Handle both array and object formats for subtasks
+  let subtask;
+  
+  if (Array.isArray(subtasksContainer)) {
+    // Use direct index access
+    if (subtaskIndex >= subtasksContainer.length) {
+      console.error(`Subtask index ${subtaskIndex} out of bounds (array length: ${subtasksContainer.length})`);
+      return;
+    }
+    
+    subtask = subtasksContainer[subtaskIndex];
+    if (!subtask) {
+      console.error("Subtask lookup failed for index:", subtaskIndex);
+      return;
+    }
+    
+    // Toggle completion
+    console.log(`Toggling completion for subtask at index ${subtaskIndex} from`, subtasksContainer[subtaskIndex].completed);
+    subtasksContainer[subtaskIndex].completed = !subtasksContainer[subtaskIndex].completed;
+    console.log("New completion status:", subtasksContainer[subtaskIndex].completed);
+    subtask = subtasksContainer[subtaskIndex];
+  } else if (typeof subtasksContainer === 'object') {
+    // For objects, we need to get the key from the data attribute
+    const subtaskKey = element.getAttribute('data-subtask-key');
+    if (!subtaskKey) {
+      console.error("No subtask key found in element data attributes");
+      return;
+    }
+    
+    subtask = subtasksContainer[subtaskKey];
+    if (!subtask) {
+      console.error("Subtask not found in object with key:", subtaskKey);
+      return;
+    }
+    
+    // Toggle completion
+    console.log(`Toggling completion for subtask with key ${subtaskKey} from`, subtasksContainer[subtaskKey].completed);
+    subtasksContainer[subtaskKey].completed = !subtasksContainer[subtaskKey].completed;
+    console.log("New completion status:", subtasksContainer[subtaskKey].completed);
+    subtask = subtasksContainer[subtaskKey];
+  } else {
+    console.error("Unsupported subtasks container format:", typeof subtasksContainer);
+    return;
+  }
+  
+  // Update the UI
   const checkboxImg = element.querySelector('img');
   if (subtask.completed) {
     checkboxImg.src = "../assets/images/subtasks_checked.svg";
@@ -937,65 +1111,85 @@ function toggleSubtask(taskId, subtaskKey, element) {
     checkboxImg.src = "../assets/images/subtasks_notchecked.svg";
   }
   
-  
-  updateSubtaskStatus(taskId, subtaskKey, task.subtasks[subtaskKey].completed);
+  // For arrays, send the index
+  if (Array.isArray(subtasksContainer)) {
+    updateSubtaskStatus(taskId, subtaskProperty, subtaskIndex, subtask.completed);
+  } else {
+    // For objects, send the key from data attribute
+    const subtaskKey = element.getAttribute('data-subtask-key');
+    updateSubtaskStatus(taskId, subtaskProperty, subtaskKey, subtask.completed);
+  }
 }
 
 
-async function updateSubtaskStatus(taskId, subtaskKey, completed) {
+async function updateSubtaskStatus(taskId, subtaskProperty, subtaskIdentifier, completed) {
+  console.log(`Updating subtask status for task ${taskId}, ${subtaskProperty}[${subtaskIdentifier}] = ${completed}`);
+  
   const task = tasksArray.find(t => t.id == taskId);
   if (!task) {
     console.error("Error: Task not found");
     return;
   }
   
-  if (!task.subtasks) {
-    console.error("Error: No subtasks in task");
+  // Get the correct subtasks container
+  const subtasksContainer = task[subtaskProperty];
+  if (!subtasksContainer) {
+    console.error(`Error: No ${subtaskProperty} in task`);
     return;
   }
   
   // Handle both array and object formats for subtasks
   let subtask;
   let previousState;
-  let subtaskIndex = null;
   
-  if (Array.isArray(task.subtasks)) {
-    subtaskIndex = Number(subtaskKey);
-    subtask = task.subtasks[subtaskIndex];
-    if (!subtask) {
-      console.error("Error: Subtask not found in array");
+  if (Array.isArray(subtasksContainer)) {
+    // For arrays, use direct index access
+    const subtaskIndex = Number(subtaskIdentifier);
+    
+    if (isNaN(subtaskIndex) || subtaskIndex < 0 || subtaskIndex >= subtasksContainer.length) {
+      console.error(`Invalid array index: ${subtaskIdentifier}`);
       return;
     }
+    
+    subtask = subtasksContainer[subtaskIndex];
+    if (!subtask) {
+      console.error(`Subtask not found at index ${subtaskIndex}`);
+      return;
+    }
+    
     previousState = subtask.completed;
-    task.subtasks[subtaskIndex].completed = completed;
+    console.log(`Setting subtask completion at index ${subtaskIndex} to ${completed}`);
+    subtasksContainer[subtaskIndex].completed = completed;
   } else {
-    subtask = task.subtasks[subtaskKey];
+    // For objects, use the key directly
+    subtask = subtasksContainer[subtaskIdentifier];
     if (!subtask) {
-      console.error("Error: Subtask not found in object");
+      console.error(`Subtask not found with key ${subtaskIdentifier}`);
       return;
     }
+    
     previousState = subtask.completed;
-    task.subtasks[subtaskKey].completed = completed;
+    console.log(`Setting subtask completion with key ${subtaskIdentifier} to ${completed}`);
+    subtasksContainer[subtaskIdentifier].completed = completed;
   }
   
   // Update the task card on the board
   updateTaskOnBoard(task);
   
   // Update visual indicators in detail view
-  const subtasksContainer = document.querySelector('.subtasks-container');
-  if (subtasksContainer) {
+  const subtasksContainerElement = document.querySelector('.subtasks-container');
+  if (subtasksContainerElement) {
     updateSubtaskProgressIndicators(task);
   }
   
-  // Update the board UI immediately to reflect the change
-  updateTaskOnBoard(task);
-  
   // Update on server
   try {
-    // Use the whole task update approach instead of subtask endpoint
-    await apiPatch(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`, {
-      subtasks: task.subtasks
-    });
+    // Create a patch payload that includes the correct subtask property
+    const patchPayload = {};
+    patchPayload[subtaskProperty] = task[subtaskProperty];
+    
+    // Use the whole task update approach
+    await apiPatch(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`, patchPayload);
     
     // Refresh data
     await fetchTasks();
@@ -1011,10 +1205,10 @@ async function updateSubtaskStatus(taskId, subtaskKey, completed) {
     showErrorNotification("Failed to update subtask. Please try again.");
     
     // Revert the local state
-    if (Array.isArray(task.subtasks) && subtaskIndex !== null) {
-      task.subtasks[subtaskIndex].completed = previousState;
-    } else if (task.subtasks[subtaskKey]) {
-      task.subtasks[subtaskKey].completed = previousState;
+    if (Array.isArray(subtasksContainer) && subtaskIndex !== null) {
+      subtasksContainer[subtaskIndex].completed = previousState;
+    } else if (subtasksContainer[subtaskKey]) {
+      subtasksContainer[subtaskKey].completed = previousState;
     }
     
     // Update UI to reflect the reverted state
@@ -1022,9 +1216,9 @@ async function updateSubtaskStatus(taskId, subtaskKey, completed) {
       createTaskOnBoard();
     } else {
       // Find the specific subtask element and update just its checkbox
-      const subtaskElements = document.querySelectorAll('.show-task-subtask');
-      for (let i = 0; i < subtaskElements.length; i++) {
-        const element = subtaskElements[i];
+      const taskSubtaskElements = document.querySelectorAll('.show-task-subtask');
+      for (let i = 0; i < taskSubtaskElements.length; i++) {
+        const element = taskSubtaskElements[i];
         if (element.textContent.includes(subtask.title)) {
           const checkboxImg = element.querySelector('img');
           if (checkboxImg) {
@@ -1048,14 +1242,26 @@ function updateTaskOnBoard(task) {
   let totalSubtasks = 0;
   let completedSubtasks = 0;
   
+  // Get the appropriate subtasks container
+  let subtasksContainer = null;
+  
+  // Try each possible subtasks property
+  if (task.task_components && (Array.isArray(task.task_components) || typeof task.task_components === 'object')) {
+    subtasksContainer = task.task_components;
+  } else if (task.subtasks && (Array.isArray(task.subtasks) || typeof task.subtasks === 'object')) {
+    subtasksContainer = task.subtasks;
+  } else if (task.components && (Array.isArray(task.components) || typeof task.components === 'object')) {
+    subtasksContainer = task.components;
+  }
+  
   // Calculate subtask progress
-  if (task.subtasks) {
-    if (Array.isArray(task.subtasks)) {
-      totalSubtasks = task.subtasks.length;
-      completedSubtasks = task.subtasks.filter(subtask => subtask.completed).length;
+  if (subtasksContainer) {
+    if (Array.isArray(subtasksContainer)) {
+      totalSubtasks = subtasksContainer.length;
+      completedSubtasks = subtasksContainer.filter(subtask => subtask.completed).length;
     } else {
-      totalSubtasks = Object.keys(task.subtasks).length;
-      completedSubtasks = Object.values(task.subtasks).filter(subtask => subtask.completed).length;
+      totalSubtasks = Object.keys(subtasksContainer).length;
+      completedSubtasks = Object.values(subtasksContainer).filter(subtask => subtask.completed).length;
     }
   }
   
@@ -1074,19 +1280,32 @@ function updateTaskOnBoard(task) {
 }
 
 function updateSubtaskProgressIndicators(task) {
-  if (!task || !task.subtasks) return;
+  if (!task) return;
   
   let totalSubtasks = 0;
   let completedSubtasks = 0;
   
+  // Get the appropriate subtasks container
+  let subtasksContainer = null;
+  
+  // Try each possible subtasks property
+  if (task.task_components && (Array.isArray(task.task_components) || typeof task.task_components === 'object')) {
+    subtasksContainer = task.task_components;
+  } else if (task.subtasks && (Array.isArray(task.subtasks) || typeof task.subtasks === 'object')) {
+    subtasksContainer = task.subtasks;
+  } else if (task.components && (Array.isArray(task.components) || typeof task.components === 'object')) {
+    subtasksContainer = task.components;
+  }
+  
+  if (!subtasksContainer) return;
+  
   // Handle both array and object formats for subtasks
-  if (Array.isArray(task.subtasks)) {
-    totalSubtasks = task.subtasks.length;
-    completedSubtasks = task.subtasks.filter(subtask => subtask.completed).length;
+  if (Array.isArray(subtasksContainer)) {
+    totalSubtasks = subtasksContainer.length;
+    completedSubtasks = subtasksContainer.filter(subtask => subtask.completed).length;
   } else {
-    const subtasks = task.subtasks || {};
-    totalSubtasks = Object.keys(subtasks).length;
-    completedSubtasks = Object.values(subtasks).filter(subtask => subtask.completed).length;
+    totalSubtasks = Object.keys(subtasksContainer).length;
+    completedSubtasks = Object.values(subtasksContainer).filter(subtask => subtask.completed).length;
   }
   
   const progressPercentage = totalSubtasks === 0 
@@ -1480,13 +1699,15 @@ function removeSubtaskFromEdit(key) {
 }
 
 
-function saveEditedTask(taskId) {
+async function saveEditedTask(taskId) {
   const task = tasksArray.find(t => t.id == taskId);
   if (!task) {
     console.error("ERROR: Task not found for ID:", taskId);
     return;
   }
   
+  // Show loading indicator
+  showLoadingIndicator();
   
   const title = document.getElementById('edit-title').value;
   const description = document.getElementById('edit-description').value;
@@ -1540,7 +1761,7 @@ function saveEditedTask(taskId) {
   
   try {
     // Always use the API
-    apiPatch(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`, {
+    await apiPatch(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`, {
       title,
       description,
       due_date: dueDate,
@@ -1548,17 +1769,26 @@ function saveEditedTask(taskId) {
       contacts: updatedContacts,
       subtasks: updatedSubtasks
     });
+    
+    // Update the local data
+    createTaskOnBoard();
+    closeTask();
+    
+    // Show success message
+    showSuccessNotification("Task updated successfully");
+    
+    // Hide loading indicator
+    hideLoadingIndicator();
+    
+    // Refresh the page after a brief delay to ensure updates are displayed
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   } catch (err) {
     console.error("API update failed:", err);
     showErrorNotification("Could not save task changes. Please try again later.");
+    hideLoadingIndicator();
   }
-  
-  
-  createTaskOnBoard();
-  closeTask();
-  
-  
-  showSuccessNotification("Task updated successfully");
 }
 
 

@@ -87,22 +87,17 @@ async function loadTasks() {
   }
   
   try {
-    // Always fetch fresh data for summary page
-    // Reset any throttling to ensure we get the latest data
-    sessionStorage.removeItem('last_summary_api_call');
+    // Force a direct API call with cache busting to get the most current data
     const now = new Date().getTime();
-    
-    // Force a direct API call to get the most current data
-    
-    // Update the last call time
-    sessionStorage.setItem('last_summary_api_call', now.toString());
-    
-    // Fetch summary data directly from the summary API endpoint with cache-busting
     const cacheBuster = `?_=${now}`;
+    
+    // First try the summary endpoint for efficient data
     const summaryData = await apiGet(`api/summary/${cacheBuster}`);
     
     if (summaryData && typeof summaryData === 'object') {
-      // Update the summary data
+      console.log("Summary data received:", summaryData);
+      
+      // Update the summary data directly
       const todoCount = summaryData["to-do"] || 0;
       const inProgressCount = summaryData["in-progress"] || 0;
       const awaitFeedbackCount = summaryData["await-feedback"] || 0;
@@ -110,15 +105,37 @@ async function loadTasks() {
       const urgentCount = summaryData["urgent"] || 0;
       const totalCount = summaryData["total-tasks"] || 0;
       
-      // Update count elements directly
-      updateCountElement('toDoCount', todoCount);
-      updateCountElement('inProgressCount', inProgressCount);
-      updateCountElement('awaitFeedbackCount', awaitFeedbackCount);
-      updateCountElement('doneCount', doneCount);
-      updateCountElement('urgentCount', urgentCount);
-      updateCountElement('allTasks', totalCount);
+      // Explicitly log values being updated
+      console.log("Updating counters with:", {
+        todoCount,
+        inProgressCount,
+        awaitFeedbackCount,
+        doneCount,
+        urgentCount,
+        totalCount
+      });
       
-      // Always fetch tasks for other functionality to ensure we have the latest data
+      // Update count elements directly and verify the elements exist
+      const updates = [
+        { id: 'toDoCount', value: todoCount },
+        { id: 'inProgressCount', value: inProgressCount },
+        { id: 'awaitFeedbackCount', value: awaitFeedbackCount },
+        { id: 'doneCount', value: doneCount },
+        { id: 'urgentCount', value: urgentCount },
+        { id: 'allTasks', value: totalCount }
+      ];
+      
+      updates.forEach(item => {
+        const element = document.getElementById(item.id);
+        if (element) {
+          element.textContent = item.value.toString();
+          console.log(`Updated ${item.id} to ${item.value}`);
+        } else {
+          console.warn(`Element ${item.id} not found`);
+        }
+      });
+      
+      // Also fetch tasks for other functionality
       try {
         const tasksResponse = await apiGet(`api/tasks/${cacheBuster}`);
         if (tasksResponse && Array.isArray(tasksResponse)) {
@@ -127,26 +144,29 @@ async function loadTasks() {
           tasks = [];
         }
       } catch (taskError) {
-        // Don't throw here to keep the summary data we already loaded
+        console.error("Error fetching task details:", taskError);
       }
       
-      return;
+      return true;
     } else {
-      // Fallback to old method if summary endpoint fails
+      console.warn("Summary data invalid, falling back to task-based counting");
+      // Fallback to task-based counting
       await fetchTasksAndUpdateCounts();
     }
   } catch (error) {
-    // Don't attempt fallback if we're having authentication issues
+    console.error("Error loading summary data:", error);
+    
+    // Try fallback to direct task counting if not an auth error
     if (error.status !== 401 && error.status !== 403) {
-      // Fallback to old method if summary endpoint fails
+      console.log("Attempting fallback to task-based counting");
       await fetchTasksAndUpdateCounts();
+    } else {
+      // Show error notification for auth issues
+      if (typeof showErrorNotification === 'function') {
+        showErrorNotification("Authentication error. Please log in again.");
+      }
     }
     
-    if (typeof showErrorNotification === 'function') {
-      showErrorNotification("Could not load summary data from the server. Please try again later.");
-    }
-    
-    // Re-throw to allow proper error handling in the caller
     throw error;
   }
 }
@@ -154,22 +174,70 @@ async function loadTasks() {
 // Fallback method to fetch tasks and calculate counts
 async function fetchTasksAndUpdateCounts() {
   try {
-    const response = await apiGet('api/tasks/');
+    console.log("Fetching tasks directly to calculate counts");
+    const cacheBuster = `?_=${new Date().getTime()}`;
+    const response = await apiGet(`api/tasks/${cacheBuster}`);
     
     if (response && Array.isArray(response)) {
+      console.log(`Received ${response.length} tasks for counting`);
       tasks = response;
-      updateAllCounts(); // Calculate and update counts from tasks
+      
+      // Calculate counts directly to avoid any potential issues
+      const todoCount = tasks.filter(task => 
+        task && task.board_category && task.board_category.toLowerCase() === 'to-do'
+      ).length;
+      
+      const inProgressCount = tasks.filter(task => 
+        task && task.board_category && task.board_category.toLowerCase() === 'in-progress'
+      ).length;
+      
+      const awaitFeedbackCount = tasks.filter(task => 
+        task && task.board_category && task.board_category.toLowerCase() === 'await-feedback'
+      ).length;
+      
+      const doneCount = tasks.filter(task => 
+        task && task.board_category && task.board_category.toLowerCase() === 'done'
+      ).length;
+      
+      const urgentCount = tasks.filter(task => 
+        task && task.priority && task.priority.toLowerCase() === 'urgent'
+      ).length;
+      
+      const totalCount = tasks.length;
+      
+      console.log("Direct count results:", {
+        todoCount,
+        inProgressCount,
+        awaitFeedbackCount,
+        doneCount,
+        urgentCount,
+        totalCount
+      });
+      
+      // Update all counts directly
+      updateCountElement('toDoCount', todoCount);
+      updateCountElement('inProgressCount', inProgressCount);
+      updateCountElement('awaitFeedbackCount', awaitFeedbackCount);
+      updateCountElement('doneCount', doneCount);
+      updateCountElement('urgentCount', urgentCount);
+      updateCountElement('allTasks', totalCount);
+      
+      return true;
     } else {
+      console.warn("No tasks found or invalid response");
       tasks = [];
       // Reset all counts to zero
       const countElements = ['toDoCount', 'inProgressCount', 'awaitFeedbackCount', 'doneCount', 'urgentCount', 'allTasks'];
       countElements.forEach(id => updateCountElement(id, 0));
+      return false;
     }
   } catch (error) {
+    console.error("Error fetching tasks for counting:", error);
     tasks = [];
     // Reset all counts to zero
     const countElements = ['toDoCount', 'inProgressCount', 'awaitFeedbackCount', 'doneCount', 'urgentCount', 'allTasks'];
     countElements.forEach(id => updateCountElement(id, 0));
+    return false;
   }
 }
 
@@ -216,7 +284,11 @@ function updateAllCounts() {
 function updateCountElement(elementId, count) {
   const element = document.getElementById(elementId);
   if (element) {
-    element.textContent = count;
+    // Ensure count is a string
+    element.textContent = count.toString();
+    console.log(`Updated ${elementId} element with value: ${count}`);
+  } else {
+    console.warn(`Cannot update ${elementId}: Element not found in the DOM`);
   }
 }
 
@@ -596,6 +668,21 @@ function forceUpdate() {
 
 window.forceUpdate = forceUpdate;
 
+// Add summaryInit function for backward compatibility with HTML
+function summaryInit() {
+  console.log("Summary initialization started");
+  
+  // Force direct initialization
+  initializeDashboard();
+  
+  // Make sure counts are updated immediately
+  setTimeout(() => {
+    console.log("Running delayed force update");
+    forceUpdate();
+  }, 500);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+  console.log("DOMContentLoaded event triggered");
   initializeDashboard();
 });

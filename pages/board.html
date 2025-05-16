@@ -8,6 +8,29 @@
     <link rel="stylesheet" href="../styles/fonts.css" />
     <link rel="stylesheet" href="../styles/desktop_template.css" />
     <link rel="stylesheet" href="../styles/board_fixed.css" /> 
+    <link rel="stylesheet" href="../styles/board_popup_fix.css" />
+    <!-- Pre-load API scripts to ensure they're available -->
+    <script src="../scripts/api_config.js"></script>
+    <script src="../scripts/error_handling.js"></script>
+    <script src="../scripts/api.js"></script>
+    <script src="../scripts/cache_buster.js"></script>
+    <script src="../scripts/board.js"></script>
+    <script>
+      // Ensure boardInit is available
+      if (typeof boardInit !== 'function') {
+        window.boardInit = function() {
+          console.log("Using fallback boardInit function - loading scripts first");
+          // Try to load the main scripts
+          setTimeout(() => {
+            if (typeof window.boardInit === 'function' && window.boardInit !== arguments.callee) {
+              window.boardInit();
+            } else {
+              alert("Could not initialize board. Please refresh the page.");
+            }
+          }, 1000);
+        };
+      }
+    </script>
   </head>
 
   <body onload="boardInit()">
@@ -175,12 +198,44 @@
     </div>
 
     
-    <script src="../scripts/api_config.js"></script>
-    <script src="../scripts/error_handling.js"></script>
-    <script src="../scripts/api.js"></script>
+    <!-- Core scripts already loaded in head -->
     <script src="../scripts/user_menu.js"></script>
-    <script src="../scripts/board.js"></script>
     <script src="../scripts/board_layer.js"></script>
     <script src="../scripts/board_edit_layer.js"></script>
+    <!-- Ensure all required API functions are available -->
+    <script>
+      // Check if any required functions are missing and provide fallbacks
+      if (typeof apiPost !== 'function') {
+        window.apiPost = async function(endpoint, data) {
+          console.log("Using emergency fallback apiPost function");
+          try {
+            const token = localStorage.getItem('token');
+            const headers = {
+              'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+              headers['Authorization'] = `Token ${token}`;
+            }
+            
+            const url = endpoint.startsWith('http') ? endpoint : `${API_CONFIG.BASE_URL}${endpoint}`;
+            const response = await fetch(url, { 
+              method: 'POST', 
+              headers,
+              body: JSON.stringify(data)
+            });
+            
+            if (!response.ok) {
+              throw new Error(`API error: ${response.status}`);
+            }
+            
+            return await response.json();
+          } catch (error) {
+            console.error(`Fallback apiPost error:`, error);
+            throw error;
+          }
+        };
+      }
+    </script>
   </body>
 </html>

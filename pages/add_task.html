@@ -9,14 +9,53 @@
     <link rel="stylesheet" href="../styles/desktop_template.css" />
     <link rel="stylesheet" href="../styles/add_task.css" />
     <link rel="stylesheet" href="../styles/add_task_elements.css" />
+    <link rel="stylesheet" href="../styles/add_task_responsive.css" />
+    <link rel="stylesheet" href="../styles/board.css" />
+    
+    <!-- Pre-load API scripts to ensure they're available -->
     <script src="../scripts/api_config.js"></script>
+    <script src="../scripts/error_handling.js"></script>
     <script src="../scripts/api.js"></script>
+    
+    <!-- Define apiPost function if it doesn't exist -->
+    <script>
+      if (typeof apiPost !== 'function') {
+        window.apiPost = async function(endpoint, data) {
+          console.log("Using emergency fallback apiPost function");
+          try {
+            const token = localStorage.getItem('token');
+            const headers = {
+              'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+              headers['Authorization'] = `Token ${token}`;
+            }
+            
+            const url = endpoint.startsWith('http') ? endpoint : `${API_CONFIG.BASE_URL}${endpoint}`;
+            const response = await fetch(url, { 
+              method: 'POST', 
+              headers,
+              body: JSON.stringify(data)
+            });
+            
+            if (!response.ok) {
+              throw new Error(`API error: ${response.status}`);
+            }
+            
+            return await response.json();
+          } catch (error) {
+            console.error(`Fallback apiPost error:`, error);
+            throw error;
+          }
+        };
+      }
+    </script>
+    
+    <!-- Task-specific scripts -->
     <script src="../scripts/add_task.js"></script>
     <script src="../scripts/add_task_subtasks.js"></script>
     <script src="../scripts/add_task_contacts.js"></script>
-    <script src="../scripts/error_handling.js"></script>
-    <link rel="stylesheet" href="../styles/add_task_responsive.css" />
-    <link rel="stylesheet" href="../styles/board.css" />
     
     <script>
       

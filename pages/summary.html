@@ -13,6 +13,51 @@
   <link rel="stylesheet" href="../styles/desktop_template.css">
   <link rel="stylesheet" href="../styles/mobile_template.css">
   <script src="../script.js"></script>
+  <!-- EMERGENCY FIX FOR SUMMARY COUNTERS - DIRECT SCRIPT INJECTION -->
+  <script>
+    // Force refresh counters every 2 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('EMERGENCY COUNTER FIX SCRIPT RUNNING');
+      
+      function updateCounters() {
+        // Make a direct API call to get tasks
+        fetch('http://127.0.0.1:8000/api/tasks/')
+          .then(response => response.json())
+          .then(tasks => {
+            console.log('GOT TASKS:', tasks.length);
+            
+            // Direct DOM manipulation 
+            document.getElementById('toDoCount').innerText = 
+              tasks.filter(t => t.board_category === 'to-do').length;
+              
+            document.getElementById('inProgressCount').innerText = 
+              tasks.filter(t => t.board_category === 'in-progress').length;
+              
+            document.getElementById('awaitFeedbackCount').innerText = 
+              tasks.filter(t => t.board_category === 'await-feedback').length;
+              
+            document.getElementById('doneCount').innerText = 
+              tasks.filter(t => t.board_category === 'done').length;
+              
+            document.getElementById('urgentCount').innerText = 
+              tasks.filter(t => t.priority === 'urgent').length;
+              
+            document.getElementById('allTasks').innerText = tasks.length;
+            
+            console.log('COUNTERS DIRECTLY UPDATED AT', new Date().toISOString());
+          })
+          .catch(err => console.error('COUNTER UPDATE ERROR:', err));
+      }
+      
+      // Run immediately
+      updateCounters();
+      
+      // Then set interval
+      setInterval(updateCounters, 2000);
+    });
+  </script>
+  <script src="../scripts/cache_buster.js"></script>
+  <script src="../scripts/summary_force_update.js"></script>
 </head>
 
 <body onload="summaryInit()">

@@ -361,19 +361,33 @@ async function createNewTask(boardCategory) {
     }
     
     
+    // Get all form data
+    const title = document.getElementById('title-input').value;
+    const description = document.getElementById('description-input').value;
+    const dueDate = document.getElementById('due-date-input').value;
+    const priority = getActivePriority();
+    const taskCategory = document.getElementById('task-category-display').textContent;
+    
+    // Include ALL possible field names for maximum compatibility
     const taskData = {
-      title: document.getElementById('title-input').value,
-      description: document.getElementById('description-input').value,
-      due_date: document.getElementById('due-date-input').value,
-      priority: getActivePriority(),
-      task_category: document.getElementById('task-category-display').textContent,
+      title: title,
+      description: description,
+      due_date: dueDate,
+      priority: priority,
+      task_category: taskCategory,
       board_category: boardCategory,
-      member_assignments: getSelectedContactIds(), 
+      // Include multiple ways to specify contacts
+      contact_ids: getSelectedContactIds(),
+      contacts: getSelectedContactIds(),
+      member_assignments: getSelectedContactIds(),
+      // Format subtasks properly
       subtasks: subtasks.map(subtask => ({
         title: subtask.title,
         completed: subtask.completed || false
       }))
     };
+    
+    console.log("SENDING TASK DATA WITH ALL FIELDS:", taskData);
     
     
     console.log('Creating new task with data:', taskData);
@@ -387,26 +401,24 @@ async function createNewTask(boardCategory) {
       console.log("Task created successfully via API:", response);
       
       const confirmation = document.getElementById('task-confirmation');
-      confirmation.classList.add('animate');
+      if (confirmation) {
+        confirmation.classList.add('animate');
+      }
       
       // Reset form
       resetTaskForm();
       
-      // Redirect after animation completes
-      setTimeout(() => {
-        confirmation.classList.remove('animate');
-        sessionStorage.removeItem('selectedBoardCategory');
-        console.log("Redirecting to board.html after task creation");
-        window.location.href = 'board.html';
-      }, 1500);
+      // Remove any saved board category
+      sessionStorage.removeItem('selectedBoardCategory');
       
-      // Add a backup redirect in case the setTimeout fails
+      // Immediate redirect with a slight delay to allow animation
+      console.log("Preparing to redirect to board.html");
+      
+      // Simple direct redirect to avoid timing issues
       setTimeout(() => {
-        if (window.location.href.includes('add_task.html')) {
-          console.log("Backup redirect to board.html activated");
-          window.location.href = 'board.html';
-        }
-      }, 3000);
+        console.log("Redirecting to board.html now");
+        window.location.href = 'board.html';
+      }, 1000);
     } else {
       console.error('Error creating task:', response?.error || 'Unknown error');
       
