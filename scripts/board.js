@@ -320,7 +320,7 @@ async function fetchContacts() {
 }
 
 
-async function fetchTasks() {
+async function fetchTasks(updateUI = true) {
   try {
     // Get tasks from the API
     const response = await apiGet(API_CONFIG.ENDPOINTS.TASKS);
@@ -329,17 +329,25 @@ async function fetchTasks() {
       throw new Error("No data received from API");
     }
     
-    console.log("Tasks from API:", response);
+    if (updateUI) {
+      console.log("Tasks from API:", response);
+    }
     
     // Process the tasks from the API response
-    tasksData = response;
-    tasksArray = Array.isArray(response) ? response : Object.values(response);
-    tasksKeys = Object.keys(tasksData);
-    
-    return tasksArray;
+    if (updateUI) {
+      tasksData = response;
+      tasksArray = Array.isArray(response) ? response : Object.values(response);
+      tasksKeys = Object.keys(tasksData);
+      return tasksArray;
+    } else {
+      // Return the processed data but don't update the global variables
+      return Array.isArray(response) ? response : Object.values(response);
+    }
   } catch (error) {
     console.error("Error fetching tasks:", error);
-    showErrorNotification("Could not load tasks from the server. Please try again later.");
+    if (updateUI) {
+      showErrorNotification("Could not load tasks from the server. Please try again later.");
+    }
     throw error;
   }
 }
@@ -1141,10 +1149,12 @@ async function updateSubtaskStatus(taskId, subtaskProperty, subtaskIdentifier, c
   // Handle both array and object formats for subtasks
   let subtask;
   let previousState;
+  let subtaskIndex = null;
+  let subtaskKey = null;
   
   if (Array.isArray(subtasksContainer)) {
     // For arrays, use direct index access
-    const subtaskIndex = Number(subtaskIdentifier);
+    subtaskIndex = Number(subtaskIdentifier);
     
     if (isNaN(subtaskIndex) || subtaskIndex < 0 || subtaskIndex >= subtasksContainer.length) {
       console.error(`Invalid array index: ${subtaskIdentifier}`);
@@ -1159,74 +1169,189 @@ async function updateSubtaskStatus(taskId, subtaskProperty, subtaskIdentifier, c
     
     previousState = subtask.completed;
     console.log(`Setting subtask completion at index ${subtaskIndex} to ${completed}`);
-    subtasksContainer[subtaskIndex].completed = completed;
+    // Make a direct update to the subtask object
+    subtasksContainer[subtaskIndex] = { 
+      ...subtask,
+      completed: completed 
+    };
   } else {
     // For objects, use the key directly
-    subtask = subtasksContainer[subtaskIdentifier];
+    subtaskKey = subtaskIdentifier;
+    subtask = subtasksContainer[subtaskKey];
     if (!subtask) {
-      console.error(`Subtask not found with key ${subtaskIdentifier}`);
+      console.error(`Subtask not found with key ${subtaskKey}`);
       return;
     }
     
     previousState = subtask.completed;
-    console.log(`Setting subtask completion with key ${subtaskIdentifier} to ${completed}`);
-    subtasksContainer[subtaskIdentifier].completed = completed;
+    console.log(`Setting subtask completion with key ${subtaskKey} to ${completed}`);
+    // Make a direct update to the subtask object
+    subtasksContainer[subtaskKey] = {
+      ...subtask,
+      completed: completed
+    };
   }
   
-  // Update the task card on the board
-  updateTaskOnBoard(task);
+  // Create a deep copy of the task to avoid reference issues
+  const taskCopy = JSON.parse(JSON.stringify(task));
+  
+  // Update all task cards on the board immediately
+  updateTaskOnBoard(taskCopy);
+  
+  // Update subtask checkbox states in ALL instances in the popup
+  updateAllSubtaskCheckboxes(taskCopy, subtaskProperty, subtaskIndex !== null ? subtaskIndex : subtaskKey, completed);
   
   // Update visual indicators in detail view
   const subtasksContainerElement = document.querySelector('.subtasks-container');
   if (subtasksContainerElement) {
-    updateSubtaskProgressIndicators(task);
+    updateSubtaskProgressIndicators(taskCopy);
   }
   
-  // Update on server
+  // Disable page refresh and re-rendering during the API call
+  const disableRefresh = true;
+  
   try {
     // Create a patch payload that includes the correct subtask property
     const patchPayload = {};
-    patchPayload[subtaskProperty] = task[subtaskProperty];
+    
+    // Deep clone the subtasks container to avoid any reference issues
+    patchPayload[subtaskProperty] = JSON.parse(JSON.stringify(taskCopy[subtaskProperty]));
+    
+    console.log("Sending subtask update to server:", patchPayload);
     
     // Use the whole task update approach
     await apiPatch(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`, patchPayload);
     
-    // Refresh data
-    await fetchTasks();
-    
-    // Update UI
-    if (document.getElementById("show-task-layer").classList.contains("d-none")) {
-      createTaskOnBoard();
-    } else {
-      openTask(taskId);
+    // Only refresh data if we need to
+    if (!disableRefresh) {
+      // Refresh data from server without disrupting the UI
+      const freshData = await fetchTasks(false);
+      if (freshData) {
+        // Update tasksArray silently
+        tasksArray = freshData;
+        
+        // Find the task in the updated data
+        const updatedTask = tasksArray.find(t => t.id == taskId);
+        if (updatedTask) {
+          // Update UI elements that depend on the task data
+          updateTaskCardWithoutReopening(updatedTask);
+        }
+      }
     }
   } catch (error) {
     console.error("Error updating subtask:", error);
     showErrorNotification("Failed to update subtask. Please try again.");
     
     // Revert the local state
-    if (Array.isArray(subtasksContainer) && subtaskIndex !== null) {
-      subtasksContainer[subtaskIndex].completed = previousState;
-    } else if (subtasksContainer[subtaskKey]) {
+    if (Array.isArray(subtasksContainer)) {
+      if (subtaskIndex !== null) {
+        subtasksContainer[subtaskIndex].completed = previousState;
+      }
+    } else if (subtaskKey && subtasksContainer[subtaskKey]) {
       subtasksContainer[subtaskKey].completed = previousState;
     }
     
     // Update UI to reflect the reverted state
-    if (document.getElementById("show-task-layer").classList.contains("d-none")) {
-      createTaskOnBoard();
-    } else {
-      // Find the specific subtask element and update just its checkbox
-      const taskSubtaskElements = document.querySelectorAll('.show-task-subtask');
-      for (let i = 0; i < taskSubtaskElements.length; i++) {
-        const element = taskSubtaskElements[i];
-        if (element.textContent.includes(subtask.title)) {
-          const checkboxImg = element.querySelector('img');
-          if (checkboxImg) {
-            checkboxImg.src = previousState 
-              ? "../assets/images/subtasks_checked.svg" 
-              : "../assets/images/subtasks_notchecked.svg";
+    updateTaskOnBoard(task);
+    updateAllSubtaskCheckboxes(task, subtaskProperty, subtaskIndex !== null ? subtaskIndex : subtaskKey, previousState);
+  }
+}
+
+// Helper function to update all checkboxes for a specific subtask
+function updateAllSubtaskCheckboxes(task, subtaskProperty, subtaskIdentifier, completed) {
+  // Get the corresponding subtask title for matching
+  let subtaskTitle = "";
+  const subtasksContainer = task[subtaskProperty];
+  
+  if (Array.isArray(subtasksContainer)) {
+    const subtask = subtasksContainer[Number(subtaskIdentifier)];
+    if (subtask) {
+      subtaskTitle = subtask.title || subtask.name || subtask.text || "";
+    }
+  } else if (typeof subtasksContainer === 'object') {
+    const subtask = subtasksContainer[subtaskIdentifier];
+    if (subtask) {
+      subtaskTitle = subtask.title || subtask.name || subtask.text || "";
+    }
+  }
+  
+  if (!subtaskTitle) return;
+  
+  // Find all elements showing this subtask and update the checkbox images
+  const taskSubtaskElements = document.querySelectorAll('.show-task-subtask');
+  for (let i = 0; i < taskSubtaskElements.length; i++) {
+    const element = taskSubtaskElements[i];
+    const elementText = element.textContent.trim();
+    
+    if (elementText.includes(subtaskTitle)) {
+      const checkboxImg = element.querySelector('img');
+      if (checkboxImg) {
+        checkboxImg.src = completed 
+          ? "../assets/images/subtasks_checked.svg" 
+          : "../assets/images/subtasks_notchecked.svg";
+      }
+    }
+  }
+}
+
+// Helper function to update a task card without reopening the popup
+function updateTaskCardWithoutReopening(task) {
+  // Find the task card in the DOM
+  const taskCard = document.querySelector(`.task-on-board[data-task-id="${task.id}"]`);
+  if (!taskCard) return;
+  
+  // Update progress bar and other visual elements
+  updateTaskOnBoard(task);
+  
+  // If task popup is open for this task, update subtask checkboxes
+  if (!document.getElementById("show-task-layer").classList.contains("d-none")) {
+    // Find all subtask checkboxes and update them based on the current state
+    const taskSubtaskElements = document.querySelectorAll('.show-task-subtask');
+    
+    // Try to get subtasks from the task
+    let subtasks = getTaskSubtasks(task);
+    if (!subtasks) return;
+    
+    // Match subtasks to their elements by title
+    if (Array.isArray(subtasks)) {
+      for (let i = 0; i < subtasks.length; i++) {
+        const subtask = subtasks[i];
+        const title = subtask.title || subtask.name || subtask.text || "";
+        
+        // Find the corresponding element
+        for (let j = 0; j < taskSubtaskElements.length; j++) {
+          const element = taskSubtaskElements[j];
+          if (element.textContent.trim().includes(title)) {
+            // Update the checkbox image
+            const checkboxImg = element.querySelector('img');
+            if (checkboxImg) {
+              checkboxImg.src = subtask.completed
+                ? "../assets/images/subtasks_checked.svg"
+                : "../assets/images/subtasks_notchecked.svg";
+            }
+            break;
           }
-          break;
+        }
+      }
+    } else if (typeof subtasks === 'object') {
+      // For object format
+      for (const key in subtasks) {
+        const subtask = subtasks[key];
+        const title = subtask.title || subtask.name || subtask.text || "";
+        
+        // Find the corresponding element
+        for (let j = 0; j < taskSubtaskElements.length; j++) {
+          const element = taskSubtaskElements[j];
+          if (element.textContent.trim().includes(title)) {
+            // Update the checkbox image
+            const checkboxImg = element.querySelector('img');
+            if (checkboxImg) {
+              checkboxImg.src = subtask.completed
+                ? "../assets/images/subtasks_checked.svg"
+                : "../assets/images/subtasks_notchecked.svg";
+            }
+            break;
+          }
         }
       }
     }
@@ -1350,10 +1475,36 @@ function showEditTask(taskId) {
     return;
   }
 
+  console.log("Editing task:", task);
+
+  // Find the subtasks in the task
+  let subtasks = getTaskSubtasks(task);
+  console.log("Subtasks for edit form:", subtasks);
+  
+  // Get assigned contacts properly
+  let assignedContacts = getTaskAssignees(task);
+  console.log("Assigned contacts for edit form:", assignedContacts);
+  
+  // Convert assignees to object format if array
+  let contactsObject = {};
+  if (assignedContacts) {
+    if (Array.isArray(assignedContacts)) {
+      assignedContacts.forEach(contact => {
+        if (contact && contact.id) {
+          contactsObject[contact.id] = {
+            name: contact.name || `Contact ${contact.id}`,
+            email: contact.email,
+            color: contact.color || generateColorForContact(contact.name || `Contact ${contact.id}`)
+          };
+        }
+      });
+    } else if (typeof assignedContacts === 'object') {
+      contactsObject = assignedContacts;
+    }
+  }
   
   document.getElementById("show-task-layer").classList.remove("d-none");
   const content = document.getElementById("show-task-inner-layer");
-  
   
   content.innerHTML = `
     <div class="show-task-firstrow">
@@ -1391,25 +1542,27 @@ function showEditTask(taskId) {
             Low <img src="../assets/images/${task.priority === 'low' ? 'low-white.svg' : 'low.svg'}" alt="Low">
           </button>
           <input type="hidden" id="edit-priority" value="${task.priority || 'medium'}">
+          <input type="hidden" id="edit-subtask-property" value="${getSubtasksPropertyName(task)}">
         </div>
       </div>
       
       <div class="edit-task-section">
         <label>Assigned To</label>
         <div id="edit-contacts-container" class="edit-contacts-container">
-          ${generateEditContactsHTML(task.contacts)}
+          ${generateEditContactsHTML(contactsObject)}
         </div>
       </div>
       
       <div class="edit-task-section">
         <label>Subtasks</label>
         <div id="edit-subtasks-container" class="edit-subtasks-container">
-          ${generateEditSubtasksHTML(task.subtasks)}
+          ${generateEditSubtasksHTML(subtasks)}
         </div>
         <div class="edit-subtask-add">
           <input type="text" id="new-subtask-input" placeholder="Add new subtask">
           <button type="button" onclick="addSubtaskToEdit()">+</button>
         </div>
+        <div id="subtask-counter" class="subtask-counter"></div>
       </div>
       
       <div class="edit-task-buttons">
@@ -1419,139 +1572,504 @@ function showEditTask(taskId) {
     </form>
   `;
   
-  
   addEditTaskStyles();
+  
+  // Update subtask counter
+  updateSubtaskCounter();
+}
+
+function getSubtasksPropertyName(task) {
+  if (task.task_components && (Array.isArray(task.task_components) || typeof task.task_components === 'object')) {
+    return 'task_components';
+  } else if (task.subtasks && (Array.isArray(task.subtasks) || typeof task.subtasks === 'object')) {
+    return 'subtasks';
+  } else if (task.components && (Array.isArray(task.components) || typeof task.components === 'object')) {
+    return 'components';
+  }
+  return 'subtasks'; // default
 }
 
 
 function addEditTaskStyles() {
-  
+  // Skip if already added
   if (document.getElementById('edit-task-styles')) return;
   
   const styleElement = document.createElement('style');
   styleElement.id = 'edit-task-styles';
   styleElement.textContent = `
+    /* Fix for the overall task popup layout */
+    .add-contact-layer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    /* Fix the inner layer to have a proper width */
+    #show-task-inner-layer {
+      width: 100%;
+      max-width: 700px !important; /* Increased width for better visibility */
+      min-width: 320px;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      padding: 35px;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+      max-height: 90vh;
+      overflow-y: auto;
+      margin: 20px;
+    }
+    
+    #edit-task-form {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 28px; /* Add more spacing between form sections */
+    }
+    
+    /* Make sure the first row is properly contained */
+    .show-task-firstrow {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 20px;
+    }
+    
+    /* Responsive layout for priority buttons */
+    .edit-priority-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    
     .edit-task-section {
-      margin-bottom: 16px;
+      margin-bottom: 0; /* Removed since we're using gap in the form */
+      width: 100%;
+      box-sizing: border-box;
     }
     
     .edit-task-section label {
       display: block;
-      margin-bottom: 8px;
+      margin-bottom: 14px;
       font-weight: bold;
+      font-size: 17px;
+      color: #2A3647;
     }
     
     .edit-task-section input[type="text"],
     .edit-task-section input[type="date"],
     .edit-task-section textarea {
       width: 100%;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      padding: 14px 16px;
+      border: 1px solid #D1D1D1;
+      border-radius: 10px;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+      transition: all 0.2s ease;
     }
     
-    .edit-priority-buttons {
-      display: flex;
-      gap: 8px;
+    .edit-task-section input[type="text"]:focus,
+    .edit-task-section input[type="date"]:focus,
+    .edit-task-section textarea:focus {
+      outline: none;
+      border-color: #29ABE2;
+      box-shadow: 0 0 8px rgba(41, 171, 226, 0.5);
+      transform: translateY(-1px);
+    }
+    
+    .edit-task-section textarea {
+      min-height: 120px;
+      resize: vertical;
     }
     
     .priority-btn {
       flex: 1;
+      min-width: 110px;
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 8px;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      gap: 10px;
+      padding: 14px 16px;
+      border: 2px solid #D1D1D1;
+      border-radius: 10px;
       background: white;
       cursor: pointer;
+      box-sizing: border-box;
+      font-size: 16px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .priority-btn:hover {
+      border-color: #29ABE2;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+      transform: translateY(-2px);
     }
     
     .priority-btn.active {
       color: white;
+      font-weight: bold;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
     
     #edit-high-btn.active {
       background-color: #FF3D00;
+      border-color: #FF3D00;
     }
     
     #edit-medium-btn.active {
       background-color: #FFA800;
+      border-color: #FFA800;
     }
     
     #edit-low-btn.active {
       background-color: #7AE229;
+      border-color: #7AE229;
     }
     
     .edit-contacts-container,
     .edit-subtasks-container {
-      margin-bottom: 8px;
+      margin-bottom: 15px;
+      width: 100%;
+      box-sizing: border-box;
+      max-height: 280px;
+      overflow-y: auto;
+      border-radius: 10px;
+      border: 1px solid #E6E6E6;
+      padding: 15px;
+      background-color: #f9f9f9;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
     }
     
     .edit-contact-item,
     .edit-subtask-item {
       display: flex;
       align-items: center;
-      padding: 8px;
-      margin-bottom: 4px;
-      background-color: #f5f5f5;
-      border-radius: 4px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      background-color: white;
+      border-radius: 10px;
+      width: 100%;
+      box-sizing: border-box;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      border: 1px solid #EFEFEF;
+      transition: all 0.2s ease;
+    }
+    
+    .edit-contact-item:hover,
+    .edit-subtask-item:hover {
+      background-color: #F6F7F8;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.08);
     }
     
     .edit-contact-item input[type="checkbox"] {
-      margin-right: 8px;
+      margin-right: 15px;
+      min-width: 20px;
+      height: 20px;
+      accent-color: #2A3647;
+      cursor: pointer;
+    }
+    
+    .edit-contact-item label {
+      cursor: pointer;
+      font-weight: normal !important;
+      margin-bottom: 0 !important;
+      font-size: 15px !important;
     }
     
     .edit-subtask-item {
       justify-content: space-between;
     }
     
+    .subtask-content {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .subtask-content input[type="checkbox"] {
+      margin-right: 15px;
+      min-width: 20px;
+      height: 20px;
+      accent-color: #2A3647;
+      cursor: pointer;
+    }
+    
+    .subtask-content label {
+      cursor: pointer;
+      font-weight: normal !important;
+      margin-bottom: 0 !important;
+      font-size: 15px !important;
+    }
+    
     .edit-subtask-add {
       display: flex;
-      gap: 8px;
+      gap: 10px;
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 18px;
     }
     
     .edit-subtask-add input {
       flex: 1;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      padding: 14px 16px;
+      border: 1px solid #D1D1D1;
+      border-radius: 10px;
+      box-sizing: border-box;
+      font-size: 16px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: all 0.2s ease;
+    }
+    
+    .edit-subtask-add input:focus {
+      outline: none;
+      border-color: #29ABE2;
+      box-shadow: 0 0 8px rgba(41, 171, 226, 0.5);
+      transform: translateY(-1px);
     }
     
     .edit-subtask-add button {
-      padding: 8px 12px;
+      padding: 14px 18px;
       background-color: #2A3647;
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 10px;
       cursor: pointer;
+      min-width: 52px;
+      box-sizing: border-box;
+      font-size: 20px;
+      font-weight: bold;
+      transition: all 0.2s ease;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    }
+    
+    .edit-subtask-add button:hover {
+      background-color: #0038FF;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 12px rgba(0,0,0,0.3);
+    }
+    
+    .delete-subtask-btn {
+      background: none;
+      border: none;
+      color: #2A3647;
+      cursor: pointer;
+      padding: 6px 10px;
+      font-size: 18px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    .delete-subtask-btn:hover {
+      color: #FF3D00;
+      background-color: rgba(255, 61, 0, 0.1);
+      transform: scale(1.1);
     }
     
     .edit-task-buttons {
       display: flex;
       justify-content: flex-end;
-      gap: 16px;
-      margin-top: 24px;
+      gap: 24px;
+      margin-top: 40px;
+      width: 100%;
+      box-sizing: border-box;
+      border-top: 1px solid #E6E6E6;
+      padding-top: 24px;
     }
     
     .cancel-btn,
     .save-btn {
-      padding: 10px 16px;
-      border-radius: 4px;
+      padding: 16px 30px;
+      border-radius: 10px;
       cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      min-width: 140px;
+      transition: all 0.2s ease;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+      text-align: center;
     }
     
     .cancel-btn {
-      background-color: transparent;
-      border: 1px solid #2A3647;
+      background-color: white;
+      border: 2px solid #2A3647;
       color: #2A3647;
+    }
+    
+    .cancel-btn:hover {
+      background-color: rgba(42, 54, 71, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 12px rgba(0,0,0,0.2);
     }
     
     .save-btn {
       background-color: #2A3647;
-      border: none;
+      border: 2px solid #2A3647;
       color: white;
+    }
+    
+    .save-btn:hover {
+      background-color: #0038FF;
+      border-color: #0038FF;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 12px rgba(0,56,255,0.3);
+    }
+    
+    /* Additional style for subtask counter */
+    .subtask-counter {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #6E7180;
+      background-color: #F6F7F8;
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 20px;
+      border: 1px solid #E6E6E6;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .subtask-counter:before {
+      content: "Subtasks: ";
+      font-weight: bold;
+    }
+    
+    /* Style for the unassigned contacts divider */
+    .unassigned-contacts-divider {
+      margin: 20px 0 16px;
+      padding: 10px 0;
+      font-weight: bold;
+      color: #2A3647;
+      border-top: 1px solid #E6E6E6;
+      font-size: 15px;
+    }
+    
+    /* Break long labels */
+    label {
+      word-break: break-word;
+    }
+    
+    /* Ensure close button in modal is clickable and visible */
+    .show-task-close {
+      cursor: pointer;
+      padding: 8px;
+      margin: -8px; /* Expands the clickable area */
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+    
+    .show-task-close:hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+    
+    .show-task-close img {
+      width: 26px;
+      height: 26px;
+    }
+    
+    /* Task category styling */
+    .task-on-board-category {
+      padding: 6px 16px;
+      border-radius: 10px;
+      display: inline-block;
+      font-size: 15px;
+      font-weight: 500;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .technical-task {
+      background-color: #0038FF;
+      color: white;
+    }
+    
+    .user-story {
+      background-color: #1FD7C1;
+      color: white;
+    }
+    
+    /* No items placeholders */
+    .no-subtasks, .no-contacts {
+      text-align: center;
+      padding: 20px;
+      color: #6E7180;
+      font-style: italic;
+    }
+    
+    /* Scrollbar styling */
+    .edit-contacts-container::-webkit-scrollbar,
+    .edit-subtasks-container::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .edit-contacts-container::-webkit-scrollbar-track,
+    .edit-subtasks-container::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    
+    .edit-contacts-container::-webkit-scrollbar-thumb,
+    .edit-subtasks-container::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 10px;
+    }
+    
+    .edit-contacts-container::-webkit-scrollbar-thumb:hover,
+    .edit-subtasks-container::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    
+    /* Focus indicators for accessibility */
+    input:focus, button:focus, textarea:focus {
+      outline: 2px solid #29ABE2;
+      outline-offset: 2px;
+    }
+    
+    /* Responsive adjustments for small screens */
+    @media (max-width: 600px) {
+      #show-task-inner-layer {
+        padding: 20px;
+        margin: 15px;
+        max-width: 95% !important;
+      }
+      
+      .edit-task-buttons {
+        flex-direction: column-reverse;
+        gap: 12px;
+      }
+      
+      .cancel-btn, .save-btn {
+        width: 100%;
+        padding: 14px;
+      }
+      
+      .edit-priority-buttons {
+        flex-direction: column;
+      }
+      
+      .priority-btn {
+        width: 100%;
+      }
     }
   `;
   
@@ -1560,15 +2078,69 @@ function addEditTaskStyles() {
 
 
 function generateEditContactsHTML(contacts) {
-  if (!contacts || Object.keys(contacts).length === 0) {
+  console.log("Generating edit contacts HTML with:", contacts);
+  
+  // Handle empty or null contacts
+  if (!contacts || 
+      (Array.isArray(contacts) && contacts.length === 0) || 
+      (typeof contacts === 'object' && Object.keys(contacts).length === 0)) {
     return '<div class="no-contacts">No contacts assigned</div>';
   }
   
+  // Handle array of contacts
+  if (Array.isArray(contacts)) {
+    const contactsHTML = contacts.map(contact => {
+      // Skip if missing id or name
+      if (!contact || !contact.id) return '';
+      
+      const name = contact.name || `Contact ${contact.id}`;
+      return `
+        <div class="edit-contact-item">
+          <input type="checkbox" id="edit-contact-${contact.id}" data-contact-id="${contact.id}" checked>
+          <label for="edit-contact-${contact.id}">${name}</label>
+        </div>
+      `;
+    }).join('');
+    
+    // Convert array to object for generateUnassignedContactsHTML
+    const contactsObj = {};
+    contacts.forEach(contact => {
+      if (contact && contact.id) {
+        contactsObj[contact.id] = contact;
+      }
+    });
+    
+    return contactsHTML + generateUnassignedContactsHTML(contactsObj);
+  }
+  
+  // Handle object of contacts
   return Object.entries(contacts).map(([id, contact]) => {
+    // Handle plain ID references
+    if (!contact || typeof contact !== 'object') {
+      // Find the contact in contactsArray
+      const contactObj = contactsArray.find(c => c.id == id);
+      if (!contactObj) {
+        return `
+          <div class="edit-contact-item">
+            <input type="checkbox" id="edit-contact-${id}" data-contact-id="${id}" checked>
+            <label for="edit-contact-${id}">Contact ${id}</label>
+          </div>
+        `;
+      }
+      
+      return `
+        <div class="edit-contact-item">
+          <input type="checkbox" id="edit-contact-${id}" data-contact-id="${id}" checked>
+          <label for="edit-contact-${id}">${contactObj.name}</label>
+        </div>
+      `;
+    }
+    
+    // Handle contact object
     return `
       <div class="edit-contact-item">
         <input type="checkbox" id="edit-contact-${id}" data-contact-id="${id}" checked>
-        <label for="edit-contact-${id}">${contact.name}</label>
+        <label for="edit-contact-${id}">${contact.name || `Contact ${id}`}</label>
       </div>
     `;
   }).join('') + generateUnassignedContactsHTML(contacts);
@@ -1576,21 +2148,28 @@ function generateEditContactsHTML(contacts) {
 
 
 function generateUnassignedContactsHTML(assignedContacts) {
-  const assignedIds = Object.keys(assignedContacts);
-  const unassignedContacts = contactsArray.filter(contact => 
-    !assignedIds.includes(contact.id.toString())
-  );
+  // Convert assigned IDs to strings for comparison
+  const assignedIds = Object.keys(assignedContacts).map(id => id.toString());
+  
+  // Filter contacts to find unassigned ones
+  const unassignedContacts = contactsArray.filter(contact => {
+    if (!contact || !contact.id) return false;
+    return !assignedIds.includes(contact.id.toString());
+  });
   
   if (unassignedContacts.length === 0) return '';
   
   const unassignedHTML = unassignedContacts.map(contact => {
+    if (!contact || !contact.id) return '';
     return `
       <div class="edit-contact-item">
         <input type="checkbox" id="edit-contact-${contact.id}" data-contact-id="${contact.id}">
-        <label for="edit-contact-${contact.id}">${contact.name}</label>
+        <label for="edit-contact-${contact.id}">${contact.name || `Contact ${contact.id}`}</label>
       </div>
     `;
   }).join('');
+  
+  if (!unassignedHTML) return '';
   
   return `
     <div class="unassigned-contacts-divider">Other contacts</div>
@@ -1600,21 +2179,77 @@ function generateUnassignedContactsHTML(assignedContacts) {
 
 
 function generateEditSubtasksHTML(subtasks) {
-  if (!subtasks || Object.keys(subtasks).length === 0) {
+  console.log("Generating edit subtasks HTML with:", subtasks);
+  
+  if (!subtasks || 
+      (Array.isArray(subtasks) && subtasks.length === 0) || 
+      (typeof subtasks === 'object' && Object.keys(subtasks).length === 0)) {
     return '<div class="no-subtasks">No subtasks created</div>';
   }
   
-  return Object.entries(subtasks).map(([key, subtask]) => {
-    return `
-      <div class="edit-subtask-item" data-subtask-key="${key}">
-        <div class="subtask-content">
-          <input type="checkbox" id="edit-subtask-${key}" ${subtask.completed ? 'checked' : ''}>
-          <label for="edit-subtask-${key}">${subtask.title}</label>
+  // Handle array format
+  if (Array.isArray(subtasks)) {
+    return subtasks.map((subtask, index) => {
+      // Handle different subtask properties for completed status
+      const isCompleted = 
+        subtask.completed === true || 
+        subtask.done === true || 
+        subtask.finished === true;
+        
+      // Handle different subtask properties for title
+      const subtaskTitle = 
+        subtask.title || 
+        subtask.name || 
+        subtask.text || 
+        'Untitled Subtask';
+      
+      // Mark this as an existing subtask (not a new one)
+      return `
+        <div class="edit-subtask-item" data-subtask-key="subtask-${index}" data-subtask-index="${index}" data-is-new="false">
+          <div class="subtask-content">
+            <input type="checkbox" id="edit-subtask-${index}" ${isCompleted ? 'checked' : ''}>
+            <label for="edit-subtask-${index}">${subtaskTitle}</label>
+          </div>
+          <button type="button" class="delete-subtask-btn" onclick="removeSubtaskFromEdit('subtask-${index}')">✕</button>
         </div>
-        <button type="button" class="delete-subtask-btn" onclick="removeSubtaskFromEdit('${key}')">✕</button>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+  }
+  // Handle object format
+  else if (typeof subtasks === 'object') {
+    return Object.entries(subtasks).map(([key, subtask], index) => {
+      // If subtask is just a string, create a simple object
+      if (typeof subtask === 'string') {
+        subtask = { title: subtask, completed: false };
+      }
+      
+      // Handle different subtask properties for completed status
+      const isCompleted = 
+        subtask.completed === true || 
+        subtask.done === true || 
+        subtask.finished === true;
+        
+      // Handle different subtask properties for title
+      const subtaskTitle = 
+        subtask.title || 
+        subtask.name || 
+        subtask.text || 
+        'Untitled Subtask';
+      
+      // Mark this as an existing subtask (not a new one)
+      return `
+        <div class="edit-subtask-item" data-subtask-key="${key}" data-subtask-index="${index}" data-is-new="false">
+          <div class="subtask-content">
+            <input type="checkbox" id="edit-subtask-${key}" ${isCompleted ? 'checked' : ''}>
+            <label for="edit-subtask-${key}">${subtaskTitle}</label>
+          </div>
+          <button type="button" class="delete-subtask-btn" onclick="removeSubtaskFromEdit('${key}')">✕</button>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  return '<div class="no-subtasks">No subtasks created</div>';
 }
 
 
@@ -1666,11 +2301,13 @@ function addSubtaskToEdit() {
     container.innerHTML = '';
   }
   
-  
+  // Generate a unique key for the new subtask 
   const newKey = `new-subtask-${Date.now()}`;
+  const subtaskIndex = container.querySelectorAll('.edit-subtask-item').length;
   
+  // Add a data attribute to indicate this is a new subtask
   const subtaskHTML = `
-    <div class="edit-subtask-item" data-subtask-key="${newKey}">
+    <div class="edit-subtask-item" data-subtask-key="${newKey}" data-is-new="true" data-subtask-index="${subtaskIndex}">
       <div class="subtask-content">
         <input type="checkbox" id="edit-subtask-${newKey}">
         <label for="edit-subtask-${newKey}">${title}</label>
@@ -1680,7 +2317,27 @@ function addSubtaskToEdit() {
   `;
   
   container.insertAdjacentHTML('beforeend', subtaskHTML);
+  
+  // Clear the input field and focus it for easy addition of multiple subtasks
   input.value = '';
+  input.focus();
+  
+  // Update a counter to reflect the total number of subtasks for UI feedback
+  updateSubtaskCounter();
+  
+  console.log(`Added new subtask: "${title}" with key ${newKey} and index ${subtaskIndex}`);
+}
+
+// Helper function to update the subtask counter in the UI
+function updateSubtaskCounter() {
+  const container = document.getElementById('edit-subtasks-container');
+  const subtaskCount = container.querySelectorAll('.edit-subtask-item').length;
+  
+  // Update a counter if it exists
+  const counter = document.getElementById('subtask-counter');
+  if (counter) {
+    counter.textContent = subtaskCount;
+  }
 }
 
 
@@ -1688,13 +2345,22 @@ function removeSubtaskFromEdit(key) {
   const subtaskItem = document.querySelector(`.edit-subtask-item[data-subtask-key="${key}"]`);
   
   if (subtaskItem) {
+    // Log what we're removing
+    const label = subtaskItem.querySelector('label');
+    const title = label ? label.textContent.trim() : 'unknown';
+    console.log(`Removing subtask "${title}" with key ${key}`);
+    
+    // Remove the element from the DOM
     subtaskItem.remove();
     
-    
+    // Update the container if no subtasks remain
     const container = document.getElementById('edit-subtasks-container');
     if (!container.querySelector('.edit-subtask-item')) {
       container.innerHTML = '<div class="no-subtasks">No subtasks created</div>';
     }
+    
+    // Update the counter
+    updateSubtaskCounter();
   }
 }
 
@@ -1714,13 +2380,17 @@ async function saveEditedTask(taskId) {
   const dueDate = document.getElementById('edit-due-date').value;
   const priority = document.getElementById('edit-priority').value;
   
+  // Get the subtasks property name from the hidden field
+  const subtaskProperty = document.getElementById('edit-subtask-property').value || 'subtasks';
+  console.log("Using subtask property:", subtaskProperty);
   
+  // Collect selected contacts
   const selectedContactIds = [];
   document.querySelectorAll('.edit-contact-item input[type="checkbox"]:checked').forEach(checkbox => {
     selectedContactIds.push(checkbox.dataset.contactId);
   });
   
-  
+  // Create updated contacts object
   const updatedContacts = {};
   selectedContactIds.forEach(id => {
     const contact = contactsArray.find(c => c.id == id);
@@ -1730,60 +2400,180 @@ async function saveEditedTask(taskId) {
         email: contact.email || `contact${id}@example.com`
       };
     } else if (task.contacts && task.contacts[id]) {
-      
+      // Keep existing contact data if not found in contactsArray
       updatedContacts[id] = task.contacts[id];
     }
   });
   
+  // Process subtasks - handle based on original format (array or object)
+  let subtasksArray = [];
+  let subtasksObject = {};
   
-  const updatedSubtasks = {};
-  document.querySelectorAll('.edit-subtask-item').forEach(item => {
+  // Collect all subtasks from the edit form
+  const subtaskElements = document.querySelectorAll('.edit-subtask-item');
+  console.log(`Found ${subtaskElements.length} subtask elements in the form`);
+  
+  // Debug what subtasks are in the DOM
+  subtaskElements.forEach((item, index) => {
+    const label = item.querySelector('label');
+    const isNew = item.dataset.isNew === "true";
     const key = item.dataset.subtaskKey;
+    console.log(`Subtask ${index}: "${label ? label.textContent : 'no label'}", isNew: ${isNew}, key: ${key}`);
+  });
+  
+  subtaskElements.forEach((item, index) => {
+    const key = item.dataset.subtaskKey;
+    const isNew = item.dataset.isNew === "true";
+    const subtaskIndex = item.dataset.subtaskIndex;
     const checkbox = item.querySelector('input[type="checkbox"]');
     const label = item.querySelector('label');
     
-    if (key && label) {
-      updatedSubtasks[key] = {
-        title: label.textContent,
-        completed: checkbox.checked
+    if (label) {
+      const title = label.textContent.trim();
+      console.log(`Processing subtask: "${title}", isNew: ${isNew}, key: ${key}, index: ${subtaskIndex}`);
+      
+      // Create clean subtask object with only necessary properties
+      const subtask = {
+        title: title,
+        completed: checkbox ? checkbox.checked : false,
       };
+      
+      // Add optional properties needed for proper API handling
+      if (!isNew && subtaskIndex) {
+        subtask.id = parseInt(subtaskIndex);
+      }
+      
+      // Always add to array for consistent API format
+      subtasksArray.push(subtask);
+      
+      // Also maintain object format for backwards compatibility
+      if (isNew) {
+        // For new subtasks, create a guaranteed unique key
+        const uniqueKey = `new_subtask_${Date.now()}_${index}`;
+        subtasksObject[uniqueKey] = subtask;
+      } else {
+        // For existing subtasks, preserve their original key
+        const objectKey = key || `subtask_${index}`;
+        subtasksObject[objectKey] = subtask;
+      }
     }
   });
   
+  console.log("Collected subtasks - Array:", subtasksArray);
+  console.log("Collected subtasks - Object:", subtasksObject);
   
+  // The server expects subtasks in a field called "subtasks" when updating a task
+  // From the server code, we can see it processes subtasks on task update
+  
+  // Collect subtasks in the format expected by the server
+  const formattedSubtasks = subtasksArray.map(subtask => {
+    return {
+      title: subtask.title,
+      completed: subtask.completed
+    };
+  });
+  
+  console.log("Formatted subtasks for server:", formattedSubtasks);
+  
+  // This is what we'll send to the API
+  let updatedSubtasks = formattedSubtasks;
+  
+  // If we have no subtasks, handle it properly
+  if (formattedSubtasks.length === 0) {
+    updatedSubtasks = [];
+  }
+  
+  // Update local task data
   task.title = title;
   task.description = description;
   task.due_date = dueDate;
   task.priority = priority;
   task.contacts = updatedContacts;
-  task.subtasks = updatedSubtasks;
   
+  // Update the correct subtasks property
+  task[subtaskProperty] = updatedSubtasks;
   
   try {
-    // Always use the API
-    await apiPatch(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`, {
+    // Create a complete payload with all required properties
+    const apiPayload = {
       title,
       description,
       due_date: dueDate,
       priority,
-      contacts: updatedContacts,
-      subtasks: updatedSubtasks
-    });
+      board_category: task.board_category, // Include the current board category
+      task_category: task.task_category,   // Include the task category (if any)
+      icon: task.icon || null               // Include any icon (if any)
+    };
     
-    // Update the local data
+    // Based on the server code, it specifically looks for "subtasks" field
+    apiPayload.subtasks = updatedSubtasks;
+    
+    // Add the contacts in a way that will work with the API
+    apiPayload.contacts = updatedContacts;
+    
+    // Also include any assigned_members or member_assignments if present
+    if (task.assigned_members) {
+      apiPayload.assigned_members = task.assigned_members;
+    }
+    if (task.member_assignments) {
+      apiPayload.member_assignments = selectedContactIds; // Use the updated IDs
+    }
+    
+    console.log("Sending API update with payload:", apiPayload);
+    
+    // Send update to API - the server will handle subtasks with the main task update
+    const response = await apiPatch(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`, apiPayload);
+    console.log("Task API update response:", response);
+    
+    if (!response) {
+      throw new Error("No response from server");
+    }
+    
+    // Fetch the updated task to make sure we have the latest state
+    const updatedTaskWithComponents = await apiGet(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`);
+    console.log("Refreshed task data with components:", updatedTaskWithComponents);
+    
+    // Update task in local array with the updated task data that includes the subtasks
+    const taskIndex = tasksArray.findIndex(t => t.id == taskId);
+    if (taskIndex !== -1) {
+      // If we got the updated task with components, use it
+      if (updatedTaskWithComponents && updatedTaskWithComponents.id) {
+        tasksArray[taskIndex] = updatedTaskWithComponents;
+      } 
+      // Otherwise, use the response from the initial task update
+      else if (response && response.id) {
+        tasksArray[taskIndex] = response;
+      }
+      // Last resort: update our local copy manually
+      else {
+        tasksArray[taskIndex] = {
+          ...task,
+          title,
+          description,
+          due_date: dueDate,
+          priority,
+          contacts: updatedContacts,
+          [subtaskProperty]: updatedSubtasks
+        };
+      }
+    }
+    
+    // Update the UI
     createTaskOnBoard();
     closeTask();
     
     // Show success message
-    showSuccessNotification("Task updated successfully");
+    showSuccessNotification("Task and subtasks updated successfully");
+    
+    // Fetch fresh data from server to ensure we have the latest state
+    await fetchTasks();
     
     // Hide loading indicator
     hideLoadingIndicator();
     
-    // Refresh the page after a brief delay to ensure updates are displayed
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+    // Refresh the board with the latest data
+    createTaskOnBoard();
+    checkAndAddNoTask();
   } catch (err) {
     console.error("API update failed:", err);
     showErrorNotification("Could not save task changes. Please try again later.");

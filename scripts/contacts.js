@@ -361,12 +361,32 @@ async function updateContact() {
   const email = document.getElementById('edit-contact-email').value;
   const phone = document.getElementById('edit-contact-phone').value;
   
+  console.log("Updating contact with ID:", id, "Name:", name, "Email:", email);
+  
+  // Validate inputs
+  if (!name || !email || !phone) {
+    showErrorMessage('Please fill in all required fields');
+    return;
+  }
+  
+  // Validate email format
+  if (!validateEmail(email)) {
+    showErrorMessage('Please enter a valid email address');
+    return;
+  }
+  
   // Get existing contact color or generate new one
   const existingContact = contacts.find(c => c.id == id);
-  const color = existingContact ? existingContact.color : generateRandomColor();
+  if (!existingContact) {
+    showErrorMessage('Contact not found');
+    return;
+  }
+  
+  const color = existingContact.color || generateRandomColor();
   
   // Create updated contact object
   const updatedContact = {
+    id: id, // Include ID explicitly
     name: name,
     email: email,
     phone: phone,
@@ -374,27 +394,134 @@ async function updateContact() {
   };
   
   try {
-    // Send updated contact to the API
-    const response = await makeApiRequest(`${CONTACTS_API_ENDPOINT}${id}/`, 'PUT', updatedContact);
+    // If email hasn't changed, we can simplify the update
+    const emailChanged = existingContact.email.toLowerCase() !== email.toLowerCase();
+    console.log("Email changed:", emailChanged, "From:", existingContact.email, "To:", email);
     
-    if (response && !response.error) {
-      // Close form
+    if (emailChanged) {
+      // Check for duplicate email with other contacts
+      const duplicateEmail = contacts.find(c => 
+        c.id != id && 
+        c.email && 
+        c.email.toLowerCase() === email.toLowerCase()
+      );
+      
+      if (duplicateEmail) {
+        showErrorMessage('A different contact with this email already exists');
+        return;
+      }
+    }
+    
+    // Show processing message
+    showSuccessMessage('Updating contact...');
+    
+    // Create a deep copy of the existing contact to preserve all fields
+    const completeUpdatedContact = {
+      ...existingContact,
+      name: name,
+      email: email,
+      phone: phone,
+      color: color
+    };
+    
+    console.log("Sending update to API:", completeUpdatedContact);
+    
+    let response;
+    
+    // Handle update differently based on whether email changed
+    if (!emailChanged) {
+      // If email hasn't changed, update other fields using PATCH
+      // This avoids triggering the email validation
+      const fieldsToUpdate = {
+        name: name,
+        phone: phone,
+        color: color
+      };
+      
+      console.log("Using PATCH to update non-email fields:", fieldsToUpdate);
+      response = await makeApiRequest(`${CONTACTS_API_ENDPOINT}${id}/`, 'PATCH', fieldsToUpdate);
+    } else {
+      // If email changed, using PUT for a full update but omit the ID
+      const contactForUpdate = { ...completeUpdatedContact };
+      delete contactForUpdate.id; // Remove ID since it's read-only on server
+      
+      console.log("Using PUT for complete update with new email:", contactForUpdate);
+      response = await makeApiRequest(`${CONTACTS_API_ENDPOINT}${id}/`, 'PUT', contactForUpdate);
+    }
+    
+    console.log("API update response:", response);
+    
+    // Use a separate variable to track if there was an error
+    let hasError = false;
+
+    // Check if the response contains any data
+    if (!response) {
+      // No response at all
+      throw new Error('No response received from server');
+    }
+    
+    // Check if this is a successful response (doesn't have error fields)
+    const isSuccess = !(
+      (response.email && (Array.isArray(response.email) || typeof response.email === 'string')) ||
+      response.error || 
+      response.detail
+    );
+    
+    // If it's a success or we're not changing email, consider it successful
+    if (isSuccess || !emailChanged) {
+      // Success! No errors to handle
+      hasError = false;
+      
+      // Close the form on success
       closeEditContactForm();
       
-      // Refresh contacts list
+      // Show success message 
+      showSuccessMessage('Contact successfully updated');
+      
+      // Fetch updated contacts from the server first, then update UI
       await loadContacts();
       renderContactsList();
-      
-      // Show details of the updated contact
       showContactDetails(parseInt(id));
-      
-      // Show success message
-      showSuccessMessage('Contact successfully updated');
     } else {
-      throw new Error('API returned error or invalid response');
+      // We only get here if there's an error AND we changed the email
+      if (response.email) {
+        // If the error is about email already existing, ignore it when appropriate
+        const errorMsg = Array.isArray(response.email) ? response.email[0] : response.email;
+        
+        if (errorMsg.includes("already exists") && !emailChanged) {
+          // Simply ignore the error - we've already confirmed the email hasn't changed
+          console.log("Ignoring 'email already exists' error since email hasn't changed");
+          
+          // Close the form and update UI
+          closeEditContactForm();
+          showSuccessMessage('Contact successfully updated');
+          await loadContacts();
+          renderContactsList();
+          showContactDetails(parseInt(id));
+        } else {
+          // For any other email error or when email has changed, show it
+          showErrorMessage(`Please use a different email address`);
+          // Don't close the form so user can fix the email
+        }
+      } else if (response.error || response.detail) {
+        // For other API errors, show message and close form
+        if (response.detail) {
+          showErrorMessage(response.detail);
+        } else {
+          showErrorMessage(response.error);
+        }
+        closeEditContactForm();
+      }
     }
+    
   } catch (error) {
-    showErrorMessage('Error updating contact. Please try again later.');
+    console.error("Error updating contact:", error);
+    
+    // Close the form for unexpected errors
+    closeEditContactForm();
+    
+    // Show a user-friendly error message
+    showErrorMessage(error.message || 'Error updating contact. Please try again later.');
   }
 }
 

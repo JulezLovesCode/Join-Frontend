@@ -21,12 +21,10 @@ function buildRequestConfig(method, authToken, data) {
   };
 
   if (data) {
-    // Handle special case for contacts
-    if ('contacts' in data) {
-      delete data.contacts;
-    }
-
-    config.body = JSON.stringify(data);
+    // No longer deleting contacts property - it's needed for task updates
+    // Deep clone the data to avoid modifying the original object
+    const clonedData = JSON.parse(JSON.stringify(data));
+    config.body = JSON.stringify(clonedData);
   }
 
   return config;
