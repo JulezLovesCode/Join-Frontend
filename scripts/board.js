@@ -587,13 +587,24 @@ function handlePrio(priority) {
 
 
 function generateTaskOnBoardHTML(key, taskId, categoryClass, task, contactsHTML, prioSrc) {
-  let subtasks = task.subtasks || {};
-  let totalSubtasks = Object.keys(subtasks).length;
-  let completedSubtasks = Object.values(subtasks).filter((subtask) => subtask.completed).length;
+  // Get subtasks info and count completed ones
+  let totalSubtasks = 0;
+  let completedSubtasks = 0;
+  
+  if (task.subtasks) {
+    if (Array.isArray(task.subtasks)) {
+      totalSubtasks = task.subtasks.length;
+      completedSubtasks = task.subtasks.filter(subtask => subtask.completed).length;
+    } else {
+      totalSubtasks = Object.keys(task.subtasks).length;
+      completedSubtasks = Object.values(task.subtasks).filter(subtask => subtask.completed).length;
+    }
+  }
+  
   let progressPercentage = totalSubtasks === 0 ? 0 : (completedSubtasks / totalSubtasks) * 100;
   
   return `
-    <div class="task-on-board" onclick="openTask(${taskId})" draggable="true" ondragstart="startDragging(${taskId})">
+    <div class="task-on-board" onclick="openTask(${taskId})" draggable="true" ondragstart="startDragging(${taskId})" data-task-id="${taskId}">
       <div class="task-on-board-category ${categoryClass}">${task.task_category || 'Task'}</div>
       <div class="task-on-board-headline">${task.title || 'Untitled Task'}</div>
       <div class="task-on-board-text">${task.description || ''}</div>
@@ -761,16 +772,16 @@ function openTask(taskId) {
       <img src="${handlePrio(task.priority)}" alt="Priority">
     </div>
     <div class="show-task-text-rows pb8">
-      <p class="show-task-characteristic" id="assignees-section-heading">Assigned to:</p>
+      <p class="show-task-characteristic d-none" id="assignees-section-heading">Assigned to:</p>
     </div>
     <div class="show-task-contacts assignees-container">
-      ${generateAssigneesList(task.contacts)}
+      ${generateAssigneesList(getTaskAssignees(task))}
     </div>
     <div class="show-task-text-rows pb8 mt12">
-      <p class="show-task-characteristic" id="subtasks-section-heading">Subtasks:</p>
+      <p class="show-task-characteristic d-none" id="subtasks-section-heading">Subtasks:</p>
     </div>
     <div class="show-task-subtasks subtasks-container">
-      ${generateSubtasksList(task.subtasks, taskId)}
+      ${generateSubtasksList(getTaskSubtasks(task), taskId)}
     </div>
     <div class="show-task-lastrow">
       <a class="show-task-lastrow-link" onclick="deleteTask(${taskId})">
@@ -785,28 +796,70 @@ function openTask(taskId) {
     </div>
   `;
   
-  
-  if (!task.subtasks || Object.keys(task.subtasks).length === 0) {
-    document.getElementById("subtasks-section-heading").classList.add("d-none");
+  // Check if there are subtasks and show/hide the section heading
+  const subtasksContainer = document.querySelector('.subtasks-container');
+  if (subtasksContainer && subtasksContainer.innerHTML.trim() !== '') {
+    document.getElementById("subtasks-section-heading").classList.remove("d-none");
   }
   
-  if (!task.contacts || Object.keys(task.contacts).length === 0) {
-    document.getElementById("assignees-section-heading").classList.add("d-none");
+  // Check if there are assignees and show/hide the section heading
+  const assigneesContainer = document.querySelector('.assignees-container');
+  if (assigneesContainer && assigneesContainer.innerHTML.trim() !== '') {
+    document.getElementById("assignees-section-heading").classList.remove("d-none");
   }
 }
 
 
+function getTaskAssignees(task) {
+  // Try to get contacts from different possible properties
+  let assignees = null;
+  
+  if (task.contacts && (Array.isArray(task.contacts) || typeof task.contacts === 'object')) {
+    assignees = task.contacts;
+  } else if (task.assigned_members && (Array.isArray(task.assigned_members) || typeof task.assigned_members === 'object')) {
+    assignees = task.assigned_members;
+  } else if (task.member_assignments && (Array.isArray(task.member_assignments) || typeof task.member_assignments === 'object')) {
+    // Convert member_assignments IDs to actual contact objects
+    if (Array.isArray(task.member_assignments)) {
+      assignees = task.member_assignments.map(id => {
+        const contact = contactsArray.find(c => c.id == id);
+        return contact || { id, name: `User ${id}`, color: generateColorForContact(`User ${id}`) };
+      });
+    }
+  }
+  
+  return assignees;
+}
+
+function getTaskSubtasks(task) {
+  // Try to get subtasks from different possible properties
+  let subtasks = null;
+  
+  if (task.subtasks && (Array.isArray(task.subtasks) || typeof task.subtasks === 'object')) {
+    subtasks = task.subtasks;
+  }
+  
+  return subtasks;
+}
+
 function generateAssigneesList(contacts) {
-  if (!contacts || Object.keys(contacts).length === 0) {
+  if (!contacts || (typeof contacts === 'object' && Object.keys(contacts).length === 0) || 
+      (Array.isArray(contacts) && contacts.length === 0)) {
     return '';
   }
   
-  return Object.values(contacts).map(contact => {
-    const color = generateColorForContact(contact.name);
+  // Handle both array and object formats
+  const contactsList = Array.isArray(contacts) ? contacts : Object.values(contacts);
+  
+  return contactsList.map(contact => {
+    if (!contact) return '';
+    
+    const color = contact.color || generateColorForContact(contact.name || 'Unknown');
+    const name = contact.name || 'Unknown';
     return `
       <div class="show-task-contact">
-        <div class="show-task-contact-letters" style="background-color: ${color};">${getInitials(contact.name)}</div>
-        <p>${contact.name}</p>
+        <div class="show-task-contact-letters" style="background-color: ${color};">${getInitials(name)}</div>
+        <p>${name}</p>
       </div>
     `;
   }).join('');
@@ -814,37 +867,71 @@ function generateAssigneesList(contacts) {
 
 
 function generateSubtasksList(subtasks, taskId) {
-  if (!subtasks || Object.keys(subtasks).length === 0) {
+  if (!subtasks) {
     return '';
   }
   
-  return Object.entries(subtasks).map(([key, subtask]) => {
-    const checkboxImage = subtask.completed ? 
-      "../assets/images/subtasks_checked.svg" : 
-      "../assets/images/subtasks_notchecked.svg";
-      
-    return `
-      <div class="show-task-subtask" onclick="toggleSubtask('${taskId}', '${key}', this)">
-        <img src="${checkboxImage}" alt="checkbox">
-        <p>${subtask.title}</p>
-      </div>
-    `;
-  }).join('');
+  // Handle both array and object formats for subtasks
+  if (Array.isArray(subtasks)) {
+    if (subtasks.length === 0) return '';
+    
+    return subtasks.map((subtask, index) => {
+      const checkboxImage = subtask.completed ? 
+        "../assets/images/subtasks_checked.svg" : 
+        "../assets/images/subtasks_notchecked.svg";
+        
+      return `
+        <div class="show-task-subtask" onclick="toggleSubtask('${taskId}', '${index}', this)">
+          <img src="${checkboxImage}" alt="checkbox">
+          <p>${subtask.title}</p>
+        </div>
+      `;
+    }).join('');
+  } else if (typeof subtasks === 'object') {
+    if (Object.keys(subtasks).length === 0) return '';
+    
+    return Object.entries(subtasks).map(([key, subtask]) => {
+      const checkboxImage = subtask.completed ? 
+        "../assets/images/subtasks_checked.svg" : 
+        "../assets/images/subtasks_notchecked.svg";
+        
+      return `
+        <div class="show-task-subtask" onclick="toggleSubtask('${taskId}', '${key}', this)">
+          <img src="${checkboxImage}" alt="checkbox">
+          <p>${subtask.title}</p>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  return '';
 }
 
 
 function toggleSubtask(taskId, subtaskKey, element) {
   const task = tasksArray.find(t => t.id == taskId);
-  if (!task || !task.subtasks || !task.subtasks[subtaskKey]) {
+  if (!task || !task.subtasks) {
     return;
   }
   
-  
-  task.subtasks[subtaskKey].completed = !task.subtasks[subtaskKey].completed;
-  
+  // Handle both array and object formats for subtasks
+  let subtask;
+  if (Array.isArray(task.subtasks)) {
+    subtask = task.subtasks[Number(subtaskKey)];
+    if (!subtask) return;
+    
+    task.subtasks[Number(subtaskKey)].completed = !task.subtasks[Number(subtaskKey)].completed;
+    subtask = task.subtasks[Number(subtaskKey)];
+  } else {
+    subtask = task.subtasks[subtaskKey];
+    if (!subtask) return;
+    
+    task.subtasks[subtaskKey].completed = !task.subtasks[subtaskKey].completed;
+    subtask = task.subtasks[subtaskKey];
+  }
   
   const checkboxImg = element.querySelector('img');
-  if (task.subtasks[subtaskKey].completed) {
+  if (subtask.completed) {
     checkboxImg.src = "../assets/images/subtasks_checked.svg";
   } else {
     checkboxImg.src = "../assets/images/subtasks_notchecked.svg";
@@ -857,85 +944,154 @@ function toggleSubtask(taskId, subtaskKey, element) {
 
 async function updateSubtaskStatus(taskId, subtaskKey, completed) {
   const task = tasksArray.find(t => t.id == taskId);
-  if (!task || !task.subtasks || !task.subtasks[subtaskKey]) {
-    console.error("Error: Task or subtask not found");
+  if (!task) {
+    console.error("Error: Task not found");
     return;
   }
   
+  if (!task.subtasks) {
+    console.error("Error: No subtasks in task");
+    return;
+  }
   
-  const previousState = task.subtasks[subtaskKey].completed;
-  task.subtasks[subtaskKey].completed = completed;
+  // Handle both array and object formats for subtasks
+  let subtask;
+  let previousState;
+  let subtaskIndex = null;
   
+  if (Array.isArray(task.subtasks)) {
+    subtaskIndex = Number(subtaskKey);
+    subtask = task.subtasks[subtaskIndex];
+    if (!subtask) {
+      console.error("Error: Subtask not found in array");
+      return;
+    }
+    previousState = subtask.completed;
+    task.subtasks[subtaskIndex].completed = completed;
+  } else {
+    subtask = task.subtasks[subtaskKey];
+    if (!subtask) {
+      console.error("Error: Subtask not found in object");
+      return;
+    }
+    previousState = subtask.completed;
+    task.subtasks[subtaskKey].completed = completed;
+  }
   
+  // Update the task card on the board
+  updateTaskOnBoard(task);
+  
+  // Update visual indicators in detail view
   const subtasksContainer = document.querySelector('.subtasks-container');
   if (subtasksContainer) {
-    
     updateSubtaskProgressIndicators(task);
   }
   
+  // Update the board UI immediately to reflect the change
+  updateTaskOnBoard(task);
   
-  // Always use the API - we no longer support localStorage fallback
-  
+  // Update on server
   try {
-    
-    await apiPatch(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/subtasks/${subtaskKey}/`, {
-      completed
+    // Use the whole task update approach instead of subtask endpoint
+    await apiPatch(`${API_CONFIG.ENDPOINTS.TASKS}${taskId}/`, {
+      subtasks: task.subtasks
     });
     
-    
+    // Refresh data
     await fetchTasks();
     
-    
+    // Update UI
     if (document.getElementById("show-task-layer").classList.contains("d-none")) {
-      
       createTaskOnBoard();
     } else {
-      
       openTask(taskId);
     }
   } catch (error) {
+    console.error("Error updating subtask:", error);
+    showErrorNotification("Failed to update subtask. Please try again.");
     
-    handleApiError(error, () => {
-      showErrorNotification("Failed to update subtask. Please try again.");
-      
-      
-      if (task && task.subtasks && task.subtasks[subtaskKey] !== undefined) {
-        task.subtasks[subtaskKey].completed = previousState;
-        
-        
-        if (document.getElementById("show-task-layer").classList.contains("d-none")) {
-          createTaskOnBoard();
-        } else {
-          
-          const subtaskElement = document.querySelector(`.show-task-subtask[data-subtask-key="${subtaskKey}"]`);
-          if (subtaskElement) {
-            const checkboxImg = subtaskElement.querySelector('img');
-            if (checkboxImg) {
-              checkboxImg.src = previousState 
-                ? "../assets/images/subtasks_checked.svg" 
-                : "../assets/images/subtasks_notchecked.svg";
-            }
+    // Revert the local state
+    if (Array.isArray(task.subtasks) && subtaskIndex !== null) {
+      task.subtasks[subtaskIndex].completed = previousState;
+    } else if (task.subtasks[subtaskKey]) {
+      task.subtasks[subtaskKey].completed = previousState;
+    }
+    
+    // Update UI to reflect the reverted state
+    if (document.getElementById("show-task-layer").classList.contains("d-none")) {
+      createTaskOnBoard();
+    } else {
+      // Find the specific subtask element and update just its checkbox
+      const subtaskElements = document.querySelectorAll('.show-task-subtask');
+      for (let i = 0; i < subtaskElements.length; i++) {
+        const element = subtaskElements[i];
+        if (element.textContent.includes(subtask.title)) {
+          const checkboxImg = element.querySelector('img');
+          if (checkboxImg) {
+            checkboxImg.src = previousState 
+              ? "../assets/images/subtasks_checked.svg" 
+              : "../assets/images/subtasks_notchecked.svg";
           }
+          break;
         }
       }
-    });
+    }
   }
 }
 
 
+// Add a new function to update task on board dynamically
+function updateTaskOnBoard(task) {
+  const taskCard = document.querySelector(`.task-on-board[data-task-id="${task.id}"]`);
+  if (!taskCard) return;
+  
+  let totalSubtasks = 0;
+  let completedSubtasks = 0;
+  
+  // Calculate subtask progress
+  if (task.subtasks) {
+    if (Array.isArray(task.subtasks)) {
+      totalSubtasks = task.subtasks.length;
+      completedSubtasks = task.subtasks.filter(subtask => subtask.completed).length;
+    } else {
+      totalSubtasks = Object.keys(task.subtasks).length;
+      completedSubtasks = Object.values(task.subtasks).filter(subtask => subtask.completed).length;
+    }
+  }
+  
+  // Update subtask progress display
+  const progressPercentage = totalSubtasks === 0 ? 0 : (completedSubtasks / totalSubtasks) * 100;
+  const progressBar = taskCard.querySelector('.progress-bar');
+  const progressText = taskCard.querySelector('.task-on-board-subtasks-text');
+  
+  if (progressBar) {
+    progressBar.style.width = `${progressPercentage}%`;
+  }
+  
+  if (progressText) {
+    progressText.textContent = `${completedSubtasks}/${totalSubtasks} Subtasks`;
+  }
+}
+
 function updateSubtaskProgressIndicators(task) {
   if (!task || !task.subtasks) return;
   
-  const subtasks = task.subtasks || {};
-  const totalSubtasks = Object.keys(subtasks).length;
-  const completedSubtasks = Object.values(subtasks)
-    .filter(subtask => subtask.completed).length;
+  let totalSubtasks = 0;
+  let completedSubtasks = 0;
   
+  // Handle both array and object formats for subtasks
+  if (Array.isArray(task.subtasks)) {
+    totalSubtasks = task.subtasks.length;
+    completedSubtasks = task.subtasks.filter(subtask => subtask.completed).length;
+  } else {
+    const subtasks = task.subtasks || {};
+    totalSubtasks = Object.keys(subtasks).length;
+    completedSubtasks = Object.values(subtasks).filter(subtask => subtask.completed).length;
+  }
   
   const progressPercentage = totalSubtasks === 0 
     ? 0 
     : (completedSubtasks / totalSubtasks) * 100;
-  
   
   const taskCard = document.querySelector(`.task-on-board[data-task-id="${task.id}"]`);
   if (taskCard) {

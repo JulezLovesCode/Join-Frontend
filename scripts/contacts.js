@@ -227,18 +227,16 @@ function closeContactForm() {
 }
 
 function openEditContactForm(contactId) {
+  console.log("Opening edit form for contact ID:", contactId);
   const contact = contacts.find(c => c.id === contactId);
-  if (!contact) return;
+  if (!contact) {
+    console.error("Contact not found with ID:", contactId);
+    return;
+  }
   
   const modal = document.getElementById('edit-contact-overlay');
   if (modal) {
-    modal.classList.remove('d-none');
-    
-    // Add slide-in animation to the panel
-    const panel = document.getElementById('edit-contact-panel');
-    if (panel) {
-      panel.classList.add('slide-in-right');
-    }
+    modal.style.display = "block";
   }
   
   // Fill form with contact data
@@ -251,24 +249,22 @@ function openEditContactForm(contactId) {
   if (nameInput) nameInput.value = contact.name;
   if (emailInput) emailInput.value = contact.email;
   if (phoneInput) phoneInput.value = contact.phone;
+  
+  // Add event listeners to close buttons
+  const closeButtons = document.querySelectorAll('.edit-close-btn');
+  closeButtons.forEach(button => {
+    button.onclick = closeEditContactForm;
+  });
+  
+  document.getElementById('cancel-edit-btn').onclick = closeEditContactForm;
 }
 
 function closeEditContactForm() {
+  console.log("Closing edit contact form");
   const modal = document.getElementById('edit-contact-overlay');
-  const panel = document.getElementById('edit-contact-panel');
   
-  if (panel) {
-    // Add slide-out animation
-    panel.classList.remove('slide-in-right');
-    panel.classList.add('slide-out-right');
-    
-    // Hide the modal after animation completes
-    setTimeout(() => {
-      if (modal) modal.classList.add('d-none');
-      if (panel) panel.classList.remove('slide-out-right');
-    }, 300);
-  } else if (modal) {
-    modal.classList.add('d-none');
+  if (modal) {
+    modal.style.display = "none";
   }
 }
 

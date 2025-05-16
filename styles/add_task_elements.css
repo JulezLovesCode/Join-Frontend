@@ -2,7 +2,7 @@
 .contactsList {
   position: absolute;
   width: 100%;
-  max-width: 100%; /* Ensure it doesn't exceed container width */
+  max-width: 420px; /* Match the max-width of the input container */
   max-height: 300px;
   overflow-y: auto;
   overflow-x: hidden; /* Prevent horizontal overflow */

@@ -180,6 +180,28 @@ function setupEventListeners() {
     console.error('Could not find edit-contact-form');
   }
   
+  // Edit contact form close buttons
+  const cancelEditBtn = document.getElementById('cancel-edit-btn');
+  if (cancelEditBtn) {
+    cancelEditBtn.addEventListener('click', function() {
+      console.log('Cancel edit button clicked');
+      if (typeof closeEditContactForm === 'function') {
+        closeEditContactForm();
+      }
+    });
+  }
+  
+  // Edit close symbol
+  const editCloseButtons = document.querySelectorAll('.edit-close-symbol, .edit-close-btn');
+  editCloseButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      console.log('Edit close button clicked');
+      if (typeof closeEditContactForm === 'function') {
+        closeEditContactForm();
+      }
+    });
+  });
+  
   // Background click to close modals
   const contactOverlay = document.getElementById('contact-form-overlay');
   if (contactOverlay) {
@@ -361,3 +383,4 @@ function closeMobileDialogBackground() {
 // Make sure these functions are globally available
 window.showContactModal = showContactModal;
 window.hideContactModal = hideContactModal;
+window.closeEditContactForm = closeEditContactForm;

@@ -463,6 +463,7 @@ function resetTaskForm() {
   document.getElementById('title-input').value = '';
   document.getElementById('description-input').value = '';
   document.getElementById('due-date-input').value = '';
+  document.getElementById('subtaskTextField').value = '';
   
   
   document.getElementById('title-input').classList.remove('inputError');
@@ -483,6 +484,18 @@ function resetTaskForm() {
   subtasks = [];
   document.getElementById('contact-display-container').innerHTML = '';
   document.getElementById('subtaskListContainer').innerHTML = '';
+  
+  // Reset subtask input controls if they're visible
+  const subtaskAddButton = document.getElementById('subtaskAddButton');
+  const subtaskControls = document.getElementById('subtaskControls');
+  
+  if (subtaskAddButton && subtaskAddButton.classList.contains('hidden')) {
+    subtaskAddButton.classList.remove('hidden');
+  }
+  
+  if (subtaskControls && !subtaskControls.classList.contains('hidden')) {
+    subtaskControls.classList.add('hidden');
+  }
 }
 
 
